@@ -3,14 +3,18 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "clean-chassis"
+name = "kaggle-competitions"
 version = "0.1.0"
-description = "Production-ready software chassis with strict governance, automated quality gates, and CI/CD."
+description = "Institutional Kaggle Competitions Monorepo & MLOps Platform with strict software engineering governance."
 authors = [{ name = "Rogerio Silva", email = "rogerio_288@hotmail.com" }]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "kaggle>=1.6.0",
+    "pyyaml>=6.0",
+    "requests>=2.31.0",
+]
 
 [project.optional-dependencies]
 dev = [

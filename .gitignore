@@ -40,3 +40,37 @@ artifacts/
 ### OS Metadata ###
 .DS_Store
 Thumbs.db
+
+### Kaggle Credentials & APIs ###
+kaggle.json
+.kaggle/
+*token*
+*.key
+
+### Machine Learning Artifacts & Weights ###
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.onnx
+*.ckpt
+*.h5
+checkpoints/
+models/weights/
+
+### Datasets & Large Data ###
+data/
+datasets/
+*.parquet
+*.feather
+*.csv.zip
+*.tar.gz
+*.tar
+
+### Competition Submissions & Runs ###
+submission.zip
+submissions/
+*.sub
+wandb/
+runs/
+lightning_logs/

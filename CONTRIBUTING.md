@@ -1,6 +1,6 @@
-# 🤝 Contributing to Clean Chassis
+# 🤝 Contributing to Kaggle Competitions Hub
 
-Thank you for your interest in contributing to **Clean Chassis**! We enforce strict software engineering governance to ensure high-performance, maintainable, and reliable software.
+Thank you for your interest in contributing to **Kaggle Competitions Hub**! We enforce strict software engineering and MLOps governance to ensure high-performance, maintainable, and reproducible competition solutions.
 
 ---
 
