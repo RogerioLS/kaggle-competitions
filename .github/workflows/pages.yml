@@ -1,0 +1,76 @@
+name: 🌐 Deploy Static Assets & Docs to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy_pages:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Static Site
+        run: |
+          mkdir -p public/assets/images
+          mkdir -p public/assets/plots
+          mkdir -p public/docs
+
+          cat << 'EOF' > public/index.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Clean Chassis — Production Blueprint Portal</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 2rem; }
+              .container { max-width: 900px; margin: 0 auto; }
+              h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 0.5rem; }
+              .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+              .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; font-weight: bold; background: #238636; color: white; }
+              code { background: #21262d; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🛡️ Clean Chassis</h1>
+              <p>Production-ready software chassis with strict governance, automated quality gates, and CI/CD.</p>
+              <div class="card">
+                <h2>🚀 Getting Started</h2>
+                <span class="badge">Production Ready</span>
+                <p>Use <code>make install</code> to set up your virtual environment and configure automated git hooks.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

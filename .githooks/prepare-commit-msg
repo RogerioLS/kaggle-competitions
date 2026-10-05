@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# ==============================================================================
+#                 CLEAN CHASSIS — PREPARE-COMMIT-MSG HOOK
+# ==============================================================================
+# Prepend an emoji based on Conventional Commit prefix or branch name.
+
+COMMIT_MSG_FILE="$1"
+CONTEXT="$2"
+
+# Do not modify merge, squash, or revert messages
+if [[ "$CONTEXT" == "merge" || "$CONTEXT" == "squash" || "$CONTEXT" == "revert" ]]; then
+  exit 0
+fi
+
+# Read first non-empty line of commit message
+FIRST_LINE=$(sed -n '1p' "$COMMIT_MSG_FILE" | sed 's/^\s*//;s/\s*$//')
+
+# If file already starts with one of our emojis, do nothing
+if echo "$FIRST_LINE" | grep -qE '^(✨|🐛|📝|🔧|♻️|✅|💄|🚀|🔥|🐧|🔒) '; then
+  exit 0
+fi
+
+# Extract all Conventional Commit type prefixes in the first line
+TYPE_LIST=$(echo "$FIRST_LINE" | grep -oE '([a-z]+)(\([^)]+\))?:' | sed -E 's/^([a-z]+).*/\1/' | tr '[:upper:]' '[:lower:]' || true)
+
+EMOJIS=""
+for t in $TYPE_LIST; do
+  case "$t" in
+    feat) e="✨";;
+    fix) e="🐛";;
+    docs) e="📝";;
+    chore) e="🔧";;
+    refactor) e="♻️";;
+    test) e="✅";;
+    style) e="💄";;
+    perf) e="🚀";;
+    ci) e="🔒";;
+    build) e="🐧";;
+    *) e="";;
+  esac
+  EMOJIS+="$e"
+done
+
+if [[ -z "$EMOJIS" ]]; then
+  # Fallback: single emoji based on branch name
+  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+  case "$BRANCH" in
+    feat/*|feature/*) EMOJIS="✨";;
+    fix/*|bugfix/*) EMOJIS="🐛";;
+    docs/*|doc/*) EMOJIS="📝";;
+    chore/*) EMOJIS="🔧";;
+    refactor/*) EMOJIS="♻️";;
+    test/*|tests/*) EMOJIS="✅";;
+    style/*) EMOJIS="💄";;
+    release/*) EMOJIS="🚀";;
+    hotfix/*) EMOJIS="🔥";;
+    *) EMOJIS="✨";;
+  esac
+fi
+
+# Prepend emojis followed by a space to the first line
+TEMP_FILE=$(mktemp)
+echo "${EMOJIS} ${FIRST_LINE}" > "$TEMP_FILE"
+tail -n +2 "$COMMIT_MSG_FILE" >> "$TEMP_FILE" 2>/dev/null || true
+mv "$TEMP_FILE" "$COMMIT_MSG_FILE"
+
+exit 0

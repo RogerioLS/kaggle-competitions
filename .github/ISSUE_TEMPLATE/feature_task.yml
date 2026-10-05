@@ -1,0 +1,21 @@
+name: "🚀 Feature Task"
+description: "Propose a new feature, architecture module, or task."
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: "Describe the new feature or task to be implemented in Clean Chassis."
+  - type: textarea
+    id: task-description
+    attributes:
+      label: "Feature Description"
+      description: "Detailed description of the proposed feature."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "List the criteria required for this task to be considered complete."
+    validations:
+      required: true

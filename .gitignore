@@ -1,0 +1,42 @@
+### Python & Bytecode ###
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+### Virtual Environments ###
+.venv/
+venv/
+env/
+ENV/
+
+### Testing & Coverage ###
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+
+### Linters & Tools ###
+.ruff_cache/
+.mypy_cache/
+
+### Local Audit & Reports ###
+summary.md
+artifacts/
+
+### Editors & IDEs ###
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+### OS Metadata ###
+.DS_Store
+Thumbs.db

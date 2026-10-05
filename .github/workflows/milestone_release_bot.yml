@@ -1,0 +1,37 @@
+name: 🤖 Milestone Release Bot
+
+on:
+  workflow_dispatch:
+    inputs:
+      milestone_target:
+        description: "Target Milestone Number or Semantic Version (e.g. 1 or v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  publish_release:
+    name: Verify Milestone & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Run Milestone Release Bot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MILESTONE_TARGET: ${{ inputs.milestone_target }}
+        run: |
+          python3 scripts/release_bot.py --milestone "$MILESTONE_TARGET"

@@ -1,0 +1,22 @@
+changelog:
+  categories:
+    - title: "🚀 Features & Core Architecture"
+      labels:
+        - "area: core"
+        - "feature"
+    - title: "🛡️ Norms, Tests & Code Quality"
+      labels:
+        - "area: tests"
+        - "quality"
+    - title: "📖 Documentation & Specifications"
+      labels:
+        - "area: docs"
+        - "documentation"
+    - title: "🔧 Infrastructure & CI/CD"
+      labels:
+        - "area: ci"
+        - "infra"
+    - title: "🐛 Bug Fixes & Maintenance"
+      labels:
+        - "bug"
+        - "fix"
