@@ -12,7 +12,7 @@ We take the security and integrity of our codebase seriously.
 
 If you discover a security vulnerability within **Kaggle Competitions Hub**, please do NOT file a public issue. Instead, report it directly via email to:
 
-- **Security Contact**: `rogerio.ls@gmail.com`
+- **Security Contact**: `rogerio_288@hotmail.com`
 
 Please include:
 1. Description of the vulnerability.
