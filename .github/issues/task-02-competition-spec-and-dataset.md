@@ -1,5 +1,6 @@
 ---
 id: TASK-02
+github_issue: 7
 title: "Gemma 4 Competition Ingestion & Dataset Preparation"
 area: competition/gemma-developer-agent
 type: feature

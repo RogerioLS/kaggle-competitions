@@ -1,5 +1,6 @@
 ---
 id: TASK-01
+github_issue: 6
 title: "Project Initialization and Architecture Scaffolding"
 area: core
 type: feature

@@ -1,5 +1,6 @@
 ---
 id: TASK-03
+github_issue: 8
 title: "Local SWE-bench Evaluation Harness & Benchmark Sandbox"
 area: competition/gemma-developer-agent
 type: feature

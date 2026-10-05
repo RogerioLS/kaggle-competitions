@@ -104,47 +104,62 @@ def get_current_branch() -> str:
 
 
 def extract_task_and_issue(branch: str) -> Tuple[Optional[str], Optional[int]]:
-    """Extracts task ID (e.g. DSLR-11) and issue number (e.g. 11) from branch or commits."""
-    # Try branch pattern: feat/dslr-11-inference-engine
-    branch_match = re.search(r"dslr-(\d+)", branch, re.IGNORECASE)
+    """Extracts task ID (e.g. TASK-02) and GitHub issue number (e.g. 7) from branch or commits."""
+    # Try branch pattern: feat/task-02-dataset-loader-and-fixtures
+    branch_match = re.search(r"(?:task|dslr)-0*(\d+)", branch, re.IGNORECASE)
     if branch_match:
-        issue_num = int(branch_match.group(1))
-        task_id = f"DSLR-{issue_num:02d}"
-        return task_id, issue_num
+        task_idx = int(branch_match.group(1))
+        task_id = f"TASK-{task_idx:02d}"
 
-    # Try branch-specific commit log pattern
+        # Lookup github_issue in .github/issues/
+        issues_dir = BASE_DIR / ".github" / "issues"
+        if issues_dir.exists():
+            pattern = f"task-{task_idx:02d}-*.md"
+            matches = list(issues_dir.glob(pattern)) or list(
+                issues_dir.glob(f"task-{task_idx}-*.md")
+            )
+            if matches:
+                content = matches[0].read_text(encoding="utf-8")
+                m = re.search(r"github_issue:\s*(\d+)", content)
+                if m:
+                    return task_id, int(m.group(1))
+
+        return task_id, task_idx
+
+    # Try branch-specific commit log pattern: [TASK-02:#7]
     commits = collect_branch_commits()
     for commit_line in commits:
-        commit_match = re.search(r"\[(DSLR-(\d+)):#(\d+)\]", commit_line, re.IGNORECASE)
+        commit_match = re.search(r"\[([a-zA-Z0-9_-]+):#(\d+)\]", commit_line, re.IGNORECASE)
         if commit_match:
-            return commit_match.group(1).upper(), int(commit_match.group(3))
+            return commit_match.group(1).upper(), int(commit_match.group(2))
 
     return None, None
 
 
-def read_issue_markdown(issue_num: int) -> Optional[Dict[str, str]]:
+def read_issue_markdown(issue_num: int, task_id: Optional[str] = None) -> Optional[Dict[str, str]]:
     """Reads local issue markdown file in .github/issues/ if present."""
     issues_dir = BASE_DIR / ".github" / "issues"
     if not issues_dir.exists():
         return None
 
-    pattern = f"dslr-{issue_num:02d}-*.md"
-    matches = list(issues_dir.glob(pattern))
-    if not matches:
-        # Try single digit
-        matches = list(issues_dir.glob(f"dslr-{issue_num}-*.md"))
+    target_file = None
+    for f in issues_dir.glob("*.md"):
+        content = f.read_text(encoding="utf-8")
+        if f"github_issue: {issue_num}" in content or (task_id and f"id: {task_id}" in content):
+            target_file = f
+            break
 
-    if not matches:
+    if not target_file:
         return None
 
-    content = matches[0].read_text(encoding="utf-8")
-    info: Dict[str, str] = {"filename": matches[0].name}
+    content = target_file.read_text(encoding="utf-8")
+    info: Dict[str, str] = {"filename": target_file.name}
 
     title_match = re.search(r'title:\s*"([^"]+)"', content)
     if title_match:
         info["title"] = title_match.group(1)
 
-    obj_match = re.search(r"## 🎯 Objetivo Didático\s+([^\n#]+)", content, re.MULTILINE)
+    obj_match = re.search(r"## 🎯 (?:Task Objective|Objetivo Didático)\s+([^\n#]+)", content)
     if obj_match:
         info["objective"] = obj_match.group(1).strip()
 
@@ -169,7 +184,7 @@ def generate_default_pr_content(
     task_id, issue_num = extract_task_and_issue(branch)
     commits = collect_branch_commits(base_branch)
 
-    issue_info = read_issue_markdown(issue_num) if issue_num else None
+    issue_info = read_issue_markdown(issue_num, task_id) if issue_num else None
 
     # Title generation
     if issue_info and "title" in issue_info:

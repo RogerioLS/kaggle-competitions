@@ -1,5 +1,6 @@
 ---
 id: TASK-05
+github_issue: 10
 title: "Kaggle Submission Pipeline, Validator & Dry-Run"
 area: competition/gemma-developer-agent
 type: feature

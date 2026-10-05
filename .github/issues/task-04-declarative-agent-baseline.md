@@ -1,5 +1,6 @@
 ---
 id: TASK-04
+github_issue: 9
 title: "Declarative Agent Architecture & Structured Prompts"
 area: competition/gemma-developer-agent
 type: feature

@@ -1,5 +1,6 @@
 ---
 id: TASK-06
+github_issue: 11
 title: "Gemma 4 Post-Training & LoRA Adapter Pipeline"
 area: competition/gemma-developer-agent
 type: feature
