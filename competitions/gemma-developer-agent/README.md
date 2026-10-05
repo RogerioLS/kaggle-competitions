@@ -108,13 +108,14 @@ The competition sandbox provides 9 native tools to the agent:
 
 ## 🗺️ Engineering Tasks & Issue Backlog
 
-| Task ID | Issue Specification | Status | Branch |
-| :--- | :--- | :---: | :--- |
-| **[TASK-02]** | [Competition Ingestion & Dataset Preparation](../../.github/issues/task-02-competition-spec-and-dataset.md) | 🟡 Active | `feat/task-02-dataset-loader-and-fixtures` |
-| **[TASK-03]** | [Local SWE-bench Evaluation Harness & Sandbox](../../.github/issues/task-03-local-swebench-harness.md) | ⚪ Planned | `feat/task-03-local-swebench-harness` |
-| **[TASK-04]** | [Declarative Agent Architecture & Structured Prompts](../../.github/issues/task-04-declarative-agent-baseline.md) | ⚪ Planned | `feat/task-04-declarative-agent-baseline` |
-| **[TASK-05]** | [Kaggle Submission Pipeline & Dry-Run Validator](../../.github/issues/task-05-submission-pipeline-and-dryrun.md) | ⚪ Planned | `feat/task-05-submission-pipeline-and-dryrun` |
-| **[TASK-06]** | [Gemma 4 Post-Training & LoRA Adapter Pipeline](../../.github/issues/task-06-lora-posttraining-pipeline.md) | ⚪ Planned | `feat/task-06-lora-posttraining-pipeline` |
+| Task ID | Issue Specification | GitHub Issue | Status | Branch |
+| :--- | :--- | :---: | :---: | :--- |
+| **[TASK-01]** | Project Initialization & Clean Chassis OS | [#6](https://github.com/RogerioLS/kaggle-competitions/issues/6) | 🟢 Completed | `main` |
+| **[TASK-02]** | Competition Ingestion & Dataset Preparation | [#7](https://github.com/RogerioLS/kaggle-competitions/issues/7) | 🟡 In Progress | `feat/task-02-dataset-loader-and-fixtures` |
+| **[TASK-03]** | Local SWE-bench Evaluation Harness & Sandbox | [#8](https://github.com/RogerioLS/kaggle-competitions/issues/8) | ⚪ Planned | `feat/task-03-local-swebench-harness` |
+| **[TASK-04]** | Declarative Agent Architecture & Structured Prompts | [#9](https://github.com/RogerioLS/kaggle-competitions/issues/9) | ⚪ Planned | `feat/task-04-declarative-agent-baseline` |
+| **[TASK-05]** | Kaggle Submission Pipeline & Dry-Run Validator | [#10](https://github.com/RogerioLS/kaggle-competitions/issues/10) | ⚪ Planned | `feat/task-05-submission-pipeline-and-dryrun` |
+| **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | ⚪ Planned | `feat/task-06-lora-posttraining-pipeline` |
 
 ---
 
