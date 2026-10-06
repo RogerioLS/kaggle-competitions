@@ -32,6 +32,10 @@ if [ "$1" != "--banner-only" ]; then
     echo -e "${GREEN}✅ Git hooks successfully configured to '.githooks'.${RESET}"
 fi
 
+if [ "$1" = "--no-banner" ]; then
+    exit 0
+fi
+
 echo ""
 printf "${CYAN}┌──────────────────────────────────────────────────────────────────────────────┐\n${RESET}"
 printf "${CYAN}│${RESET}  ${BOLD}${MAGENTA}              🛡️  CLEAN CHASSIS — ONBOARDING & BEST PRACTICES               ${RESET} ${CYAN}│\n${RESET}"

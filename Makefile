@@ -40,11 +40,7 @@ onboarding:
 	@bash scripts/install-hooks.sh --banner-only
 
 install:
-	@printf "$(BOLD)$(BLUE)📦 [INSTALL] Installing dev dependencies and configuring git hooks...$(RESET)\n"
-	@$(PYTHON) -m pip install --upgrade pip
-	@$(PYTHON) -m pip install -e ".[dev]"
-	@bash scripts/install-hooks.sh
-	@printf "$(GREEN)✔ Clean Chassis environment ready!$(RESET)\n"
+	@bash scripts/clean_install.sh
 
 test:
 	@printf "$(BOLD)$(BLUE)🚀 [TESTS] Running test suite...$(RESET)\n"
