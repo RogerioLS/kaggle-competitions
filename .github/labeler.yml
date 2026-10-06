@@ -2,6 +2,10 @@
   - changed-files:
       - any-glob-to-any-file: "src/core/**"
 
+"area: competition":
+  - changed-files:
+      - any-glob-to-any-file: "competitions/**"
+
 "area: tests":
   - changed-files:
       - any-glob-to-any-file: "tests/**"
