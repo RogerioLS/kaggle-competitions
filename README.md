@@ -29,7 +29,8 @@ Built on the foundation of **Clean Chassis**, it enforces high-performance engin
 
 | Competition | Domain / Focus | Stack | Status | Target / Prize |
 | :--- | :--- | :--- | :---: | :--- |
-| **[Google - The Gemma 4 Developer Agent](competitions/gemma-developer-agent)** | Autonomous Software Engineering Agents (SWE-bench) | Gemma 4 31B, ADK, LoRA, Python | 🟢 Active | Dec 02, 2026 ($100k) |
+| **[Google - The Gemma 4 Developer Agent](competitions/gemma_developer_agent)** | Autonomous Software Engineering Agents (SWE-bench) | Gemma 4 31B, ADK, LoRA, Python | 🟢 Active | Dec 02, 2026 ($100k) |
+| **[NFL Big Data Bowl 2027](https://www.kaggle.com/competitions/nfl-big-data-bowl-2027)** | Combine Sensor Tracking to NFL Performance | Polars, Spatio-Temporal 10Hz, Python | ⚪ Planned | Jan 06, 2027 ($100k) |
 | **Enveda CASMI 2026** | Mass Spectrometry / Signal Modeling | PyTorch, Spectral Graph Nets | ⚪ Planned | Dec 14, 2026 ($50k) |
 
 ---
