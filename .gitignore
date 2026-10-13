@@ -61,6 +61,7 @@ models/weights/
 ### Datasets & Large Data ###
 data/
 datasets/
+mock_data/
 *.parquet
 *.feather
 *.csv.zip

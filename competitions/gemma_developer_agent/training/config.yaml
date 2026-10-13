@@ -1,0 +1,49 @@
+# SFT / LoRA Post-Training Configuration for Gemma 4 31B
+# Tailored for SWE-bench reasoning & patch generation on 4x NVIDIA L4 GPUs
+
+model_name_or_path: "google/gemma-4-31b-it"
+adapter_name: "gemma4-swe-w4a16"
+
+# PEFT LoRA Hyperparameters
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# Quantization (W4A16 QAT / NF4)
+quantization:
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+
+# Training Hyperparameters
+training:
+  learning_rate: 0.0002
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  max_seq_length: 4096
+  num_train_epochs: 3
+  warmup_ratio: 0.03
+  lr_scheduler_type: "cosine"
+  weight_decay: 0.01
+  logging_steps: 10
+  save_strategy: "epoch"
+  fp16: false
+  bf16: true
+
+# Output & Artifacts
+output:
+  output_dir: "artifacts/adapters/gemma4-swe-w4a16"
+  trajectories_dataset: "artifacts/trajectories.jsonl"
+  save_total_limit: 2

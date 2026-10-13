@@ -114,8 +114,8 @@ The competition sandbox provides 9 native tools to the agent:
 | **[TASK-02]** | Competition Ingestion & Dataset Preparation | [#7](https://github.com/RogerioLS/kaggle-competitions/issues/7) | 🟢 Completed | `main` |
 | **[TASK-03]** | Local SWE-bench Evaluation Harness & Sandbox | [#8](https://github.com/RogerioLS/kaggle-competitions/issues/8) | 🟢 Completed | `main` |
 | **[TASK-04]** | Declarative Agent Architecture & Structured Prompts | [#9](https://github.com/RogerioLS/kaggle-competitions/issues/9) | 🟢 Completed | `main` |
-| **[TASK-05]** | Kaggle Submission Pipeline & Dry-Run Validator | [#10](https://github.com/RogerioLS/kaggle-competitions/issues/10) | 🟢 Completed | `feat/task-05-submission-pipeline-and-dryrun` |
-| **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | ⚪ Planned | `feat/task-06-lora-posttraining-pipeline` |
+| **[TASK-05]** | Kaggle Submission Pipeline & Dry-Run Validator | [#10](https://github.com/RogerioLS/kaggle-competitions/issues/10) | 🟢 Completed | `main` |
+| **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | 🟢 Completed | `feat/task-06-lora-posttraining-pipeline` |
 
 ---
 
@@ -131,6 +131,12 @@ python -m competitions.gemma_developer_agent.evaluation.dataset_loader --mode fi
 # 3. Run evaluation harness on development tasks
 python -m competitions.gemma_developer_agent.evaluation.harness --sample 5
 
-# 4. Package and validate submission.zip
+# 4. Extract SFT trajectories and fine-tune Gemma 4 LoRA adapter
+make collect-trajectories
+make train-lora
+make evaluate-comparison
+
+# 5. Package and validate submission.zip
 make package-submission
+make verify-submission
 ```
