@@ -9,6 +9,8 @@ __all__ = [
     "ValidationResult",
     "validate_submission",
     "verify_submission_dry_run",
+    "KaggleOfflineKernelRunner",
+    "KernelPrediction",
 ]
 
 
@@ -27,4 +29,8 @@ def __getattr__(name: str) -> Any:
         from competitions.gemma_developer_agent.submission import validator
 
         return getattr(validator, name)
+    if name in {"KaggleOfflineKernelRunner", "KernelPrediction"}:
+        from competitions.gemma_developer_agent.submission import kaggle_kernel
+
+        return getattr(kaggle_kernel, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

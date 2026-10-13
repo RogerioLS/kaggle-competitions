@@ -116,7 +116,38 @@ The competition sandbox provides 9 native tools to the agent:
 | **[TASK-04]** | Declarative Agent Architecture & Structured Prompts | [#9](https://github.com/RogerioLS/kaggle-competitions/issues/9) | 🟢 Completed | `main` |
 | **[TASK-05]** | Kaggle Submission Pipeline & Dry-Run Validator | [#10](https://github.com/RogerioLS/kaggle-competitions/issues/10) | 🟢 Completed | `main` |
 | **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | 🟢 Completed | `main` |
-| **[TASK-07]** | Kaggle Code Submission Automation & Offline Kernel | [#20](https://github.com/RogerioLS/kaggle-competitions/issues/20) | ⚪ Planned | `feat/task-07-kaggle-submission-and-kernel` |
+| **[TASK-07]** | Kaggle Code Submission Automation & Offline Kernel | [#20](https://github.com/RogerioLS/kaggle-competitions/issues/20) | 🟢 Completed | `feat/task-07-kaggle-submission-and-kernel` |
+
+---
+
+## 📡 Kaggle Submission Protocol & Execution Guide
+
+The repository supports multiple submission modes designed for Kaggle's offline evaluation environment:
+
+### Mode 1: End-to-End Pipeline Maestro (Recommended)
+Executes the full pipeline in a single command (trajectory collection, LoRA fine-tuning, Pass@1 comparative evaluation, packaging, and offline validation):
+```bash
+make pipeline
+```
+
+### Mode 2: Automated Kaggle CLI Submission
+Dispatches `artifacts/submission.zip` directly to the Kaggle competition:
+```bash
+# Dry-run validation (no network calls)
+make submit-kaggle ARGS="--dry-run"
+
+# Live submission to Kaggle leaderboard
+make submit-kaggle ARGS="--message 'Gemma 4 Multi-Agent LoRA W4A16 Production Submission'"
+
+# Query recent submissions status
+make submit-kaggle ARGS="--status"
+```
+
+### Mode 3: Standalone Offline Kaggle Kernel
+Simulates execution inside Kaggle's 4x NVIDIA L4 GPU environment (`--network none`):
+```bash
+make run-kernel
+```
 
 ---
 
@@ -140,4 +171,8 @@ make evaluate-comparison
 # 5. Package and validate submission.zip
 make package-submission
 make verify-submission
+
+# 6. Execute full pipeline and submit
+make pipeline
+make submit-kaggle ARGS="--dry-run"
 ```
