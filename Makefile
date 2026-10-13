@@ -18,7 +18,7 @@ MAGENTA := \033[35m
 BLUE    := \033[34m
 WHITE   := \033[97m
 
-.PHONY: help onboarding install test check audit summary clean pre-commit pr package-submission verify-submission
+.PHONY: help onboarding install test check audit summary clean pre-commit pr package-submission verify-submission collect-trajectories train-lora evaluate-comparison
 
 help:
 	@printf "$(CYAN)┌──────────────────────────────────────────────────────────────────────────────┐\n$(RESET)"
@@ -26,15 +26,18 @@ help:
 	@printf "$(CYAN)├──────────────────────────────────────────────────────────────────────────────┤\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make help$(RESET)               $(DIM)─$(RESET) Show this interactive command center              $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make onboarding$(RESET)         $(DIM)─$(RESET) Display best practices & Git governance banner    $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make install$(RESET)            $(DIM)─$(RESET) Install dependencies and configure git hooks       $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make test$(RESET)               $(DIM)─$(RESET) Run all automated unit and integration tests        $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make install$(RESET)            $(DIM)─$(RESET) Install dependencies and configure git hooks      $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make test$(RESET)               $(DIM)─$(RESET) Run all automated unit and integration tests      $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make check$(RESET)              $(DIM)─$(RESET) Run pre-commit linters (Black, Isort, Flake8)     $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make audit$(RESET)              $(DIM)─$(RESET) Full audit: syntax + linters + tests + security    $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make audit$(RESET)              $(DIM)─$(RESET) Full audit: syntax + linters + tests + security   $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make summary$(RESET)            $(DIM)─$(RESET) Generate local audit summary report (summary.md)  $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make pr$(RESET)                 $(DIM)─$(RESET) Create or update PR with quality checklist         $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make package-submission$(RESET) $(DIM)─$(RESET) Package declarative agent into submission.zip        $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make pr$(RESET)                 $(DIM)─$(RESET) Create or update PR with quality checklist        $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make collect-trajectories$(RESET)$(DIM)─$(RESET) Extract SFT trajectories from benchmarks         $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make train-lora$(RESET)          $(DIM)─$(RESET) Fine-tune Gemma 4 LoRA adapters on trajectories   $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make evaluate-comparison$(RESET)$(DIM)─$(RESET) Compare Pass@1 of Base vs LoRA Adapted model      $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make package-submission$(RESET) $(DIM)─$(RESET) Package declarative agent into submission.zip     $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make verify-submission$(RESET)  $(DIM)─$(RESET) Validate submission.zip and run dry-run sandbox   $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make clean$(RESET)              $(DIM)─$(RESET) Clean temporary cache files, pytest, and dist      $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make clean$(RESET)              $(DIM)─$(RESET) Clean temporary cache files, pytest, and dist     $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)├──────────────────────────────────────────────────────────────────────────────┤\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)           $(BOLD)$(WHITE)🔥 Clean Chassis • Built for High-Performance Engineering$(RESET)          $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)└──────────────────────────────────────────────────────────────────────────────┘\n$(RESET)"
@@ -69,6 +72,21 @@ summary:
 pr:
 	@printf "$(BOLD)$(BLUE)🚀 [PR] Creating or updating GitHub Pull Request...$(RESET)\n"
 	@$(PYTHON) scripts/create_pr.py
+
+collect-trajectories:
+	@printf "$(BOLD)$(BLUE)📥 [TRAINING] Extracting SFT trajectories for Gemma 4...$(RESET)\n"
+	@$(PYTHON) -m competitions.gemma_developer_agent.training.trajectory_collector --generate-synthetic 5 --output artifacts/trajectories.jsonl
+	@printf "$(GREEN)✔ Trajectories collected: artifacts/trajectories.jsonl$(RESET)\n"
+
+train-lora:
+	@printf "$(BOLD)$(BLUE)⚡ [TRAINING] Running Gemma 4 LoRA fine-tuning...$(RESET)\n"
+	@$(PYTHON) -m competitions.gemma_developer_agent.training.lora_trainer --config competitions/gemma_developer_agent/training/config.yaml --data artifacts/trajectories.jsonl --output-dir artifacts/adapters/gemma4-swe-w4a16
+	@printf "$(GREEN)✔ LoRA adapter training complete: artifacts/adapters/gemma4-swe-w4a16$(RESET)\n"
+
+evaluate-comparison:
+	@printf "$(BOLD)$(BLUE)📊 [EVAL] Evaluating Pass@1 comparison (Base vs Adapted)...$(RESET)\n"
+	@$(PYTHON) -m competitions.gemma_developer_agent.training.evaluator --fixtures-dir artifacts/mock_data --output-dir artifacts
+	@printf "$(GREEN)✔ Comparison evaluation complete: artifacts/model_comparison_report.md$(RESET)\n"
 
 package-submission:
 	@printf "$(BOLD)$(BLUE)📦 [SUBMISSION] Packaging declarative agent submission.zip...$(RESET)\n"

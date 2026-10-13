@@ -60,12 +60,14 @@ class SubmissionPackager:
         self,
         base_dir: Optional[Path] = None,
         output_path: Optional[Path] = None,
+        adapters_dir: Optional[Path] = None,
     ) -> None:
         """Initializes packager with repository paths.
 
         Args:
             base_dir: Base directory of gemma_developer_agent competition package.
             output_path: Target path for the output submission.zip file.
+            adapters_dir: Optional path to LoRA adapters directory.
         """
         if base_dir is None:
             # Resolves competitions/gemma_developer_agent
@@ -83,7 +85,15 @@ class SubmissionPackager:
         self.agent_dir = self.base_dir / "agent"
         self.prompts_dir = self.base_dir / "prompts"
         self.skills_dir = self.base_dir / "skills"
-        self.adapters_dir = self.base_dir / "adapters"
+
+        if adapters_dir is not None:
+            self.adapters_dir = Path(adapters_dir).resolve()
+        elif (self.base_dir / "adapters").is_dir():
+            self.adapters_dir = self.base_dir / "adapters"
+        elif (self.output_path.parent / "adapters").is_dir():
+            self.adapters_dir = self.output_path.parent / "adapters"
+        else:
+            self.adapters_dir = self.base_dir / "adapters"
 
     @staticmethod
     def compute_sha256(file_path: Path) -> str:
@@ -244,10 +254,11 @@ class SubmissionPackager:
 
 def package_submission(
     output_path: Optional[Path] = None,
+    adapters_dir: Optional[Path] = None,
     dry_run: bool = False,
 ) -> Tuple[Path, Manifest]:
     """Convenience helper to package submission.zip and return output path and manifest."""
-    packager = SubmissionPackager(output_path=output_path)
+    packager = SubmissionPackager(output_path=output_path, adapters_dir=adapters_dir)
     manifest = packager.create_package(dry_run=dry_run)
     return packager.output_path, manifest
 
@@ -265,6 +276,12 @@ def main() -> int:
         help="Target path for submission.zip (default: artifacts/submission.zip)",
     )
     parser.add_argument(
+        "--adapters-dir",
+        type=str,
+        default=None,
+        help="Optional path to LoRA adapters directory to package.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Simulate packaging and print manifest without creating archive.",
@@ -279,7 +296,10 @@ def main() -> int:
 
     try:
         out_path = Path(args.output) if args.output else None
-        target_path, manifest = package_submission(output_path=out_path, dry_run=args.dry_run)
+        ad_path = Path(args.adapters_dir) if args.adapters_dir else None
+        target_path, manifest = package_submission(
+            output_path=out_path, adapters_dir=ad_path, dry_run=args.dry_run
+        )
 
         mode = "[DRY-RUN] " if args.dry_run else ""
         print(f"📦 {mode}Submission Packaging Summary:")

@@ -34,6 +34,7 @@ from competitions.gemma_developer_agent.agent.schema import (  # noqa: E402
 )
 
 MAX_CODE_SUBMISSION_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB max for code/prompts
+MAX_ADAPTER_SUBMISSION_SIZE_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB max when weights included
 MAX_TURNS_UPPER_BOUND = 50
 MAX_TIMEOUT_SECONDS_UPPER_BOUND = 1200
 
@@ -120,10 +121,14 @@ class SubmissionValidator:
             )
 
         # 2. Size limit checks
-        if compressed_size > MAX_CODE_SUBMISSION_SIZE_BYTES:
+        has_adapters = any(name.startswith("adapters/") for name in namelist)
+        max_size = (
+            MAX_ADAPTER_SUBMISSION_SIZE_BYTES if has_adapters else MAX_CODE_SUBMISSION_SIZE_BYTES
+        )
+        if compressed_size > max_size:
             errors.append(
                 f"Archive size {compressed_size:,} bytes exceeds maximum limit "
-                f"of {MAX_CODE_SUBMISSION_SIZE_BYTES:,} bytes."
+                f"of {max_size:,} bytes."
             )
             checks["size_within_limits"] = False
         else:
@@ -196,46 +201,45 @@ class SubmissionValidator:
             except Exception as exc:
                 return False, [f"Failed to parse agent.yaml from archive: {exc}"]
 
-        if not isinstance(agent_data, dict):
-            return False, ["agent.yaml must contain a YAML mapping."]
+            if not isinstance(agent_data, dict):
+                return False, ["agent.yaml must contain a YAML mapping."]
 
-        # Check required fields
-        for req in ("name", "version", "model", "budget", "workflow", "sub_agents"):
-            if req not in agent_data:
-                errors.append(f"Missing required field '{req}' in agent.yaml.")
+            # Check required fields
+            for req in ("name", "version", "model", "budget", "workflow", "sub_agents"):
+                if req not in agent_data:
+                    errors.append(f"Missing required field '{req}' in agent.yaml.")
 
-        # Check budget limits
-        budget = agent_data.get("budget", {})
-        if isinstance(budget, dict):
-            max_turns = budget.get("max_turns", 0)
-            timeout = budget.get("timeout_seconds", 0)
-            if max_turns > MAX_TURNS_UPPER_BOUND:
-                errors.append(
-                    f"agent.yaml max_turns ({max_turns}) exceeds upper bound "
-                    f"({MAX_TURNS_UPPER_BOUND})."
-                )
-            if timeout > MAX_TIMEOUT_SECONDS_UPPER_BOUND:
-                errors.append(
-                    f"agent.yaml timeout_seconds ({timeout}) exceeds upper bound "
-                    f"({MAX_TIMEOUT_SECONDS_UPPER_BOUND})."
-                )
+            # Check budget limits
+            budget = agent_data.get("budget", {})
+            if isinstance(budget, dict):
+                max_turns = budget.get("max_turns", 0)
+                timeout = budget.get("timeout_seconds", 0)
+                if max_turns > MAX_TURNS_UPPER_BOUND:
+                    errors.append(
+                        f"agent.yaml max_turns ({max_turns}) exceeds upper bound "
+                        f"({MAX_TURNS_UPPER_BOUND})."
+                    )
+                if timeout > MAX_TIMEOUT_SECONDS_UPPER_BOUND:
+                    errors.append(
+                        f"agent.yaml timeout_seconds ({timeout}) exceeds upper bound "
+                        f"({MAX_TIMEOUT_SECONDS_UPPER_BOUND})."
+                    )
 
-        # Check system prompt reference
-        sys_prompt = agent_data.get("system_prompt", "prompts/system.md")
-        if sys_prompt not in available_files:
-            errors.append(f"Referenced system prompt '{sys_prompt}' not found in archive.")
+            # Check system prompt reference
+            sys_prompt = agent_data.get("system_prompt", "prompts/system.md")
+            if sys_prompt not in available_files:
+                errors.append(f"Referenced system prompt '{sys_prompt}' not found in archive.")
 
-        # Check sampling config
-        sampling_cfg = agent_data.get("sampling_config")
-        if sampling_cfg and sampling_cfg not in available_files:
-            errors.append(f"Referenced sampling config '{sampling_cfg}' not found in archive.")
+            # Check sampling config
+            sampling_cfg = agent_data.get("sampling_config")
+            if sampling_cfg and sampling_cfg not in available_files:
+                errors.append(f"Referenced sampling config '{sampling_cfg}' not found in archive.")
 
-        # Check sub-agents
-        sub_agents = agent_data.get("sub_agents", {})
-        if not isinstance(sub_agents, dict) or not sub_agents:
-            errors.append("agent.yaml must declare at least one sub-agent in 'sub_agents'.")
-        else:
-            with zipfile.ZipFile(self.archive_path, "r") as zf:
+            # Check sub-agents
+            sub_agents = agent_data.get("sub_agents", {})
+            if not isinstance(sub_agents, dict) or not sub_agents:
+                errors.append("agent.yaml must declare at least one sub-agent in 'sub_agents'.")
+            else:
                 for sa_name, sa_path in sub_agents.items():
                     if sa_path not in available_files:
                         errors.append(
@@ -265,13 +269,48 @@ class SubmissionValidator:
                     except Exception as e:
                         errors.append(f"Error parsing sub-agent '{sa_name}' config: {e}")
 
-        # Check workflow
-        workflow = agent_data.get("workflow", {})
-        if isinstance(workflow, dict):
-            sequence = workflow.get("sequence", [])
-            for step in sequence:
-                if step not in sub_agents:
-                    errors.append(f"Workflow sequence step '{step}' not in declared sub_agents.")
+            # Check workflow
+            workflow = agent_data.get("workflow", {})
+            if isinstance(workflow, dict):
+                sequence = workflow.get("sequence", [])
+                for step in sequence:
+                    if step not in sub_agents:
+                        errors.append(
+                            f"Workflow sequence step '{step}' not in declared sub_agents."
+                        )
+
+            # Check adapters if present in archive
+            adapter_configs = [
+                f
+                for f in available_files
+                if f.startswith("adapters/") and f.endswith("adapter_config.json")
+            ]
+            for ac_path in adapter_configs:
+                try:
+                    ac_raw = zf.read(ac_path).decode("utf-8")
+                    ac_data = json.loads(ac_raw)
+                    if not isinstance(ac_data, dict):
+                        errors.append(f"Invalid JSON format in adapter config '{ac_path}'.")
+                    elif ac_data.get("peft_type") != "LORA":
+                        errors.append(
+                            f"Adapter in '{ac_path}' has non-LoRA peft_type: "
+                            f"{ac_data.get('peft_type')}"
+                        )
+
+                    # Check companion weights
+                    adapter_dir = "/".join(ac_path.split("/")[:-1])
+                    weight_found = any(
+                        f.startswith(adapter_dir)
+                        and (f.endswith(".safetensors") or f.endswith(".bin"))
+                        for f in available_files
+                    )
+                    if not weight_found:
+                        errors.append(
+                            f"LoRA adapter in '{adapter_dir}' is missing weights "
+                            "(.safetensors or .bin)."
+                        )
+                except Exception as e:
+                    errors.append(f"Failed to validate adapter config '{ac_path}': {e}")
 
         return len(errors) == 0, errors
 
