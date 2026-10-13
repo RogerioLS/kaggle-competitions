@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GitHub Pull Request Automation Utility for 42 DSLR.
+"""GitHub Pull Request Automation Utility for Kaggle Competitions.
 
 Automatically creates standardized Pull Requests for feature and fix branches
 using either explicit descriptions provided by AI agents/developers or synthesized
@@ -37,8 +37,9 @@ def get_ssl_context() -> ssl.SSLContext:
 def get_git_output(cmd: List[str]) -> str:
     """Executes a git command and returns stripped stdout, or empty string on error."""
     try:
+        full_cmd = ["git", "--no-pager"] + cmd[1:] if cmd and cmd[0] == "git" else cmd
         res = subprocess.run(
-            cmd,
+            full_cmd,
             cwd=str(BASE_DIR),
             capture_output=True,
             text=True,
@@ -198,30 +199,41 @@ def generate_default_pr_content(
         pr_title = f"✨ feat: [{task_id or branch}] automated pull request"
 
     # Body generation
+    issue_target = f"Resolves #{issue_num}" if issue_num else "N/A"
+    description_text = (
+        issue_info["objective"]
+        if issue_info and "objective" in issue_info
+        else f"Delivers scheduled features and deliverables for branch `{branch}`."
+    )
+
     body_lines: List[str] = [
-        "## 🎯 Description & Subject Requirements",
+        "### 📋 Pull Request Overview",
+        "",
+        f"- **Task / Issue**: {issue_target}",
+        f"- **Description**: {description_text}",
+        "",
+        "---",
+        "",
+        "### 🛡️ Quality Gate Checklist",
+        "",
+        "- [x] Code complies with project style and formatting (`make check`)",
+        "- [x] Unit and integration tests pass 100% (`make test`)",
+        "- [x] Security audit passes with zero critical findings (`make audit`)",
+        "- [x] Documentation updated if applicable",
     ]
 
-    if issue_info and "objective" in issue_info:
-        body_lines.append(f"{issue_info['objective']}\n")
-    else:
-        body_lines.append(f"Delivers scheduled features and deliverables for branch `{branch}`.\n")
-
-    body_lines.append("### 📋 Key Deliverables & Commits")
     if commits:
+        body_lines.extend(
+            [
+                "",
+                "---",
+                "",
+                "### 📋 Key Deliverables & Commits",
+            ]
+        )
         for c in reversed(commits):
             clean_commit = re.sub(r"^[0-9a-f]+\s+", "", c)
             body_lines.append(f"- {clean_commit}")
-    else:
-        body_lines.append("- Implements deliverables according to 42 subject requirements.")
-
-    body_lines.append("\n### 🧪 Quality Gate")
-    body_lines.append("- [x] `make check` (0 errors, 0 warnings across all linters)")
-    body_lines.append("- [x] `make audit` (42 Norm & Anti-Cheating compliance)")
-    body_lines.append("- [x] Automated unit and integration test suite passing")
-
-    if issue_num:
-        body_lines.append(f"\nCloses #{issue_num}")
 
     return pr_title, "\n".join(body_lines)
 

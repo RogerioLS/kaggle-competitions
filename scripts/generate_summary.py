@@ -44,25 +44,37 @@ def _check_syntax() -> Tuple[str, str, int]:
 
 
 def _check_unit_tests() -> Tuple[str, str, int, int]:
-    """Runs existing unit tests and parses pass/total counts."""
+    """Runs existing unit tests with pytest and parses pass/total counts."""
     test_files = list((BASE_DIR / "tests").rglob("test_*.py"))
     if not test_files:
         return "✅ PASSED", "Ran 0 tests in 0.000s\n\nOK", 0, 0
 
-    code, out = run_command(
-        [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"]
-    )
+    code, out = run_command([sys.executable, "-m", "pytest", "-v"])
     status = "✅ PASSED" if code == 0 else "❌ FAILED"
+
+    import re
 
     total = 0
     passed = 0
-    for line in out.splitlines():
-        if "Ran " in line and "tests in" in line:
-            try:
-                total = int(line.split("Ran ")[1].split(" tests")[0])
-                passed = total if code == 0 else 0
-            except Exception:
-                pass
+    passed_match = re.search(r"(\d+)\s+passed", out)
+    if passed_match:
+        passed = int(passed_match.group(1))
+        total += passed
+
+    failed_match = re.search(r"(\d+)\s+failed", out)
+    if failed_match:
+        total += int(failed_match.group(1))
+
+    # Fallback to unittest discovery parsing if applicable
+    if total == 0:
+        for line in out.splitlines():
+            if "Ran " in line and "tests in" in line:
+                try:
+                    total = int(line.split("Ran ")[1].split(" tests")[0])
+                    passed = total if code == 0 else 0
+                except Exception:
+                    pass
+
     return status, out, passed, total
 
 
