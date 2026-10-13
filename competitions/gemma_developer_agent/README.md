@@ -115,7 +115,8 @@ The competition sandbox provides 9 native tools to the agent:
 | **[TASK-03]** | Local SWE-bench Evaluation Harness & Sandbox | [#8](https://github.com/RogerioLS/kaggle-competitions/issues/8) | 🟢 Completed | `main` |
 | **[TASK-04]** | Declarative Agent Architecture & Structured Prompts | [#9](https://github.com/RogerioLS/kaggle-competitions/issues/9) | 🟢 Completed | `main` |
 | **[TASK-05]** | Kaggle Submission Pipeline & Dry-Run Validator | [#10](https://github.com/RogerioLS/kaggle-competitions/issues/10) | 🟢 Completed | `main` |
-| **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | 🟢 Completed | `feat/task-06-lora-posttraining-pipeline` |
+| **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | 🟢 Completed | `main` |
+| **[TASK-07]** | Kaggle Code Submission Automation & Offline Kernel | [#20](https://github.com/RogerioLS/kaggle-competitions/issues/20) | ⚪ Planned | `feat/task-07-kaggle-submission-and-kernel` |
 
 ---
 

@@ -205,6 +205,15 @@ def setup_tasks(token: str, milestone_map: Dict[str, int]) -> None:
             "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
             "labels": ["area: lora", "type: feature", "priority: medium"],
         },
+        {
+            "id": "TASK-07",
+            "title": (
+                "[TASK-07] Kaggle Code Submission Automation, Offline Kernel & Pipeline Maestro"
+            ),
+            "file": "task-07-kaggle-submission-and-kernel.md",
+            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
+            "labels": ["area: submission", "type: feature", "priority: high"],
+        },
     ]
 
     for task in task_definitions:
