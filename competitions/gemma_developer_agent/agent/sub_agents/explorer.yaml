@@ -1,0 +1,12 @@
+name: explorer
+role: "Codebase Navigator"
+description: "Semantic AST graph retrieval and file-level symbol mapping."
+prompt: "prompts/explorer.md"
+max_turns: 5
+timeout_seconds: 60
+allowed_tools:
+  - search_similar_code
+  - get_code_neighbors
+  - get_code_subgraph
+  - read_file
+  - get_status

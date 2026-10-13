@@ -1,0 +1,27 @@
+name: "gemma-4-developer-agent"
+version: "1.0.0"
+model: "gemma-4-31b-it-qat-w4a16-ct"
+description: "Declarative autonomous software engineering agent for SWE-bench resolution."
+system_prompt: "prompts/system.md"
+
+budget:
+  max_turns: 20
+  timeout_seconds: 300
+  max_tokens_per_turn: 4096
+
+sampling_config: "configs/sampling.yaml"
+
+sub_agents:
+  explorer: "sub_agents/explorer.yaml"
+  locator: "sub_agents/locator.yaml"
+  drafter: "sub_agents/drafter.yaml"
+  validator: "sub_agents/validator.yaml"
+
+workflow:
+  sequence:
+    - explorer
+    - locator
+    - drafter
+    - validator
+  fallback_on_failure: locator
+  max_routing_cycles: 2

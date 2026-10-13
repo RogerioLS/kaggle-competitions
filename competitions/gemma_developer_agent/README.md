@@ -111,9 +111,9 @@ The competition sandbox provides 9 native tools to the agent:
 | Task ID | Issue Specification | GitHub Issue | Status | Branch |
 | :--- | :--- | :---: | :---: | :--- |
 | **[TASK-01]** | Project Initialization & Clean Chassis OS | [#6](https://github.com/RogerioLS/kaggle-competitions/issues/6) | 🟢 Completed | `main` |
-| **[TASK-02]** | Competition Ingestion & Dataset Preparation | [#7](https://github.com/RogerioLS/kaggle-competitions/issues/7) | 🟡 In Progress | `feat/task-02-dataset-loader-and-fixtures` |
-| **[TASK-03]** | Local SWE-bench Evaluation Harness & Sandbox | [#8](https://github.com/RogerioLS/kaggle-competitions/issues/8) | ⚪ Planned | `feat/task-03-local-swebench-harness` |
-| **[TASK-04]** | Declarative Agent Architecture & Structured Prompts | [#9](https://github.com/RogerioLS/kaggle-competitions/issues/9) | ⚪ Planned | `feat/task-04-declarative-agent-baseline` |
+| **[TASK-02]** | Competition Ingestion & Dataset Preparation | [#7](https://github.com/RogerioLS/kaggle-competitions/issues/7) | 🟢 Completed | `main` |
+| **[TASK-03]** | Local SWE-bench Evaluation Harness & Sandbox | [#8](https://github.com/RogerioLS/kaggle-competitions/issues/8) | 🟢 Completed | `main` |
+| **[TASK-04]** | Declarative Agent Architecture & Structured Prompts | [#9](https://github.com/RogerioLS/kaggle-competitions/issues/9) | 🟢 Completed | `feat/task-04-declarative-agent-baseline` |
 | **[TASK-05]** | Kaggle Submission Pipeline & Dry-Run Validator | [#10](https://github.com/RogerioLS/kaggle-competitions/issues/10) | ⚪ Planned | `feat/task-05-submission-pipeline-and-dryrun` |
 | **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | ⚪ Planned | `feat/task-06-lora-posttraining-pipeline` |
 
