@@ -42,15 +42,32 @@ class Colors:
 
 
 def find_kaggle_credentials() -> Optional[Tuple[str, str]]:
-    """Discovers Kaggle credentials from environment variables or ~/.kaggle/kaggle.json.
+    """Discovers Kaggle credentials from environment variables or ~/.kaggle/.
 
     Returns:
         Tuple of (username, key) or None if unconfigured.
     """
+    # 1. Environment variables (highest priority)
+    api_token = os.environ.get("KAGGLE_API_TOKEN", "").strip()
+    if api_token:
+        username = os.environ.get("KAGGLE_USERNAME", "").strip() or "rogeriolopesdasilva"
+        return username, api_token
+
     user_env = os.environ.get("KAGGLE_USERNAME", "").strip()
     key_env = os.environ.get("KAGGLE_KEY", "").strip()
     if user_env and key_env:
         return user_env, key_env
+
+    # 2. Configuration files in ~/.kaggle (fallback)
+    token_file = Path.home() / ".kaggle" / "access_token"
+    if token_file.is_file():
+        try:
+            tok = token_file.read_text(encoding="utf-8").strip()
+            if tok:
+                username = os.environ.get("KAGGLE_USERNAME", "").strip() or "rogeriolopesdasilva"
+                return username, tok
+        except Exception:
+            pass
 
     kaggle_json_path = Path.home() / ".kaggle" / "kaggle.json"
     if kaggle_json_path.is_file():
