@@ -1,0 +1,62 @@
+name: 🔄 Sync Codebase to Kaggle Dataset
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "competitions/**"
+      - "src/**"
+      - "scripts/**"
+      - "pyproject.toml"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run in dry-run mode (no API calls)"
+        required: false
+        default: false
+        type: boolean
+      message:
+        description: "Version update message"
+        required: false
+        default: "Manual sync from GitHub Actions"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sync-kaggle-dataset:
+    name: Sync Codebase to Kaggle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install kaggle
+
+      - name: Sync Dataset to Kaggle
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          EXTRA_ARGS=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            EXTRA_ARGS="--dry-run"
+          fi
+          
+          MSG="${{ github.event.inputs.message }}"
+          if [ -z "$MSG" ]; then
+            MSG="Automated sync on push to main (${{ github.sha }})"
+          fi
+          
+          python3 scripts/sync_kaggle_dataset.py $EXTRA_ARGS --message "$MSG"

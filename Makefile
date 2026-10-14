@@ -18,7 +18,7 @@ MAGENTA := \033[35m
 BLUE    := \033[34m
 WHITE   := \033[97m
 
-.PHONY: help onboarding install test check audit summary clean pre-commit pr package-submission verify-submission collect-trajectories train-lora evaluate-comparison pipeline submit-kaggle run-kernel
+.PHONY: help onboarding install test check audit summary clean pre-commit pr package-submission verify-submission collect-trajectories train-lora evaluate-comparison pipeline submit-kaggle run-kernel sync-dataset
 
 help:
 	@printf "$(CYAN)┌──────────────────────────────────────────────────────────────────────────────┐\n$(RESET)"
@@ -40,6 +40,7 @@ help:
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make verify-submission$(RESET)  $(DIM)─$(RESET) Validate submission.zip and run dry-run sandbox   $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make run-kernel$(RESET)         $(DIM)─$(RESET) Execute offline Kaggle runner kernel in sandbox   $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make submit-kaggle$(RESET)      $(DIM)─$(RESET) Validate and submit submission.zip to Kaggle API  $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make sync-dataset$(RESET)       $(DIM)─$(RESET) Sync codebase to Kaggle Dataset (offline GPU)    $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make clean$(RESET)              $(DIM)─$(RESET) Clean temporary cache files, pytest, and dist     $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)├──────────────────────────────────────────────────────────────────────────────┤\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)           $(BOLD)$(WHITE)🔥 Clean Chassis • Built for High-Performance Engineering$(RESET)          $(CYAN)│\n$(RESET)"
@@ -109,6 +110,10 @@ run-kernel:
 submit-kaggle:
 	@printf "$(BOLD)$(BLUE)📡 [KAGGLE] Submitting package to Kaggle competition...$(RESET)\n"
 	@$(PYTHON) scripts/submit_kaggle.py $(ARGS)
+
+sync-dataset:
+	@printf "$(BOLD)$(BLUE)🔄 [KAGGLE] Syncing codebase to Kaggle Dataset...$(RESET)\n"
+	@$(PYTHON) scripts/sync_kaggle_dataset.py $(ARGS)
 
 pipeline:
 	@printf "$(BOLD)$(BLUE)🚀 [PIPELINE] Running full end-to-end competition pipeline...$(RESET)\n"
