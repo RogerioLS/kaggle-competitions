@@ -46,6 +46,9 @@ kaggle.json
 .kaggle/
 *token*
 *.key
+.env
+.env.*
+!.env.example
 
 ### Machine Learning Artifacts & Weights ###
 *.pt

@@ -35,14 +35,24 @@ class TestKaggleCredentials:
 
     def test_find_credentials_from_env(self, monkeypatch) -> None:
         """Discovers credentials when KAGGLE_USERNAME and KAGGLE_KEY are set."""
+        monkeypatch.delenv("KAGGLE_API_TOKEN", raising=False)
         monkeypatch.setenv("KAGGLE_USERNAME", "test_user")
         monkeypatch.setenv("KAGGLE_KEY", "test_key_123")
 
         creds = find_kaggle_credentials()
         assert creds == ("test_user", "test_key_123")
 
+    def test_find_credentials_from_api_token(self, monkeypatch) -> None:
+        """Discovers credentials from KAGGLE_API_TOKEN."""
+        monkeypatch.setenv("KAGGLE_API_TOKEN", "KGAT_test123")
+        monkeypatch.setenv("KAGGLE_USERNAME", "token_user")
+
+        creds = find_kaggle_credentials()
+        assert creds == ("token_user", "KGAT_test123")
+
     def test_find_credentials_from_file(self, tmp_path, monkeypatch) -> None:
         """Discovers credentials from ~/.kaggle/kaggle.json when env is empty."""
+        monkeypatch.delenv("KAGGLE_API_TOKEN", raising=False)
         monkeypatch.delenv("KAGGLE_USERNAME", raising=False)
         monkeypatch.delenv("KAGGLE_KEY", raising=False)
 
@@ -60,6 +70,7 @@ class TestKaggleCredentials:
 
     def test_find_credentials_none_found(self, tmp_path, monkeypatch) -> None:
         """Returns None when no credentials are configured in env or home directory."""
+        monkeypatch.delenv("KAGGLE_API_TOKEN", raising=False)
         monkeypatch.delenv("KAGGLE_USERNAME", raising=False)
         monkeypatch.delenv("KAGGLE_KEY", raising=False)
 

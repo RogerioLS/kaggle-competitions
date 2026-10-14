@@ -117,7 +117,7 @@ The competition sandbox provides 9 native tools to the agent:
 | **[TASK-05]** | Kaggle Submission Pipeline & Dry-Run Validator | [#10](https://github.com/RogerioLS/kaggle-competitions/issues/10) | 🟢 Completed | `main` |
 | **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | 🟢 Completed | `main` |
 | **[TASK-07]** | Kaggle Code Submission Automation & Offline Kernel | [#20](https://github.com/RogerioLS/kaggle-competitions/issues/20) | 🟢 Completed | `feat/task-07-kaggle-submission-and-kernel` |
-| **[TASK-08]** | GitHub-to-Kaggle Dataset Sync Automation & CI/CD | Pending | ⚪ Planned | `feat/task-08-kaggle-dataset-sync` |
+| **[TASK-08]** | GitHub-to-Kaggle Dataset Sync Automation & CI/CD | [#22](https://github.com/RogerioLS/kaggle-competitions/issues/22) | 🟢 Completed | `feat/task-08-kaggle-dataset-sync` |
 
 ---
 
@@ -150,6 +150,24 @@ Simulates execution inside Kaggle's 4x NVIDIA L4 GPU environment (`--network non
 make run-kernel
 ```
 
+### Mode 4: Automated GitHub-to-Kaggle Dataset Sync
+Synchronizes codebase modules (`competitions`, `src`, `scripts`) into a Kaggle Dataset (`gemma-agent-code`) for offline notebook execution:
+```bash
+# Dry-run packaging simulation
+make sync-dataset ARGS="--dry-run"
+
+# Live push to Kaggle Datasets
+make sync-dataset ARGS="--message 'Sync Gemma 4 agent modules'"
+```
+
+Inside your Kaggle Notebook (runs even with `Internet: OFF`):
+```python
+import sys
+sys.path.insert(0, "/kaggle/input/gemma-agent-code")
+
+from competitions.gemma_developer_agent.agent.runner import DeclarativeAgentRunner
+```
+
 ---
 
 ## 🚀 Local Commands & Quickstart
@@ -176,4 +194,7 @@ make verify-submission
 # 6. Execute full pipeline and submit
 make pipeline
 make submit-kaggle ARGS="--dry-run"
+
+# 7. Sync codebase to Kaggle Dataset
+make sync-dataset ARGS="--dry-run"
 ```
