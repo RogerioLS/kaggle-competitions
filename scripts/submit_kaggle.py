@@ -26,6 +26,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+# Load local .env and proxy SSL bundle if present
+env_file = REPO_ROOT / ".env"
+if env_file.is_file():
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
+
+if Path("/etc/ssl/certs/ca-certificates.crt").exists():
+    os.environ.setdefault("REQUESTS_CA_BUNDLE", "/etc/ssl/certs/ca-certificates.crt")
+
 from competitions.gemma_developer_agent.submission.validator import (  # noqa: E402
     SubmissionValidator,
 )

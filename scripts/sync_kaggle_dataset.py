@@ -24,6 +24,19 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Load local .env and proxy SSL bundle if present
+env_file = REPO_ROOT / ".env"
+if env_file.is_file():
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
+
+if Path("/etc/ssl/certs/ca-certificates.crt").exists():
+    os.environ.setdefault("REQUESTS_CA_BUNDLE", "/etc/ssl/certs/ca-certificates.crt")
+
 DEFAULT_DATASET_SLUG = "gemma-agent-code"
 DEFAULT_DATASET_TITLE = "Gemma 4 Developer Agent Codebase"
 
