@@ -75,11 +75,13 @@ class KaggleOfflineKernelRunner:
         output_dir: Path,
         harness_sandbox_dir: Optional[Path] = None,
         dry_run: bool = False,
+        inference_engine: Optional[Any] = None,
     ) -> None:
         self.agent_config_path = agent_config_path
         self.output_dir = output_dir
         self.dry_run = dry_run
         self.harness_sandbox_dir = harness_sandbox_dir or (output_dir / "sandbox")
+        self.inference_engine = inference_engine
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.harness_sandbox_dir.mkdir(parents=True, exist_ok=True)
@@ -100,12 +102,14 @@ class KaggleOfflineKernelRunner:
         self,
         instances: List[SWEInstance],
         max_instances: Optional[int] = None,
+        planned_steps: Optional[List[Dict[str, Any]]] = None,
     ) -> List[KernelPrediction]:
         """Processes instances and collects surgical patch predictions.
 
         Args:
             instances: List of SWE-bench instances to resolve.
             max_instances: Optional slice limit for fast evaluation / testing.
+            planned_steps: Optional scripted steps override.
 
         Returns:
             List of KernelPrediction objects.
@@ -116,7 +120,7 @@ class KaggleOfflineKernelRunner:
         logger.info("Executing Kaggle kernel over %d instances...", len(target_instances))
         total_start = time.perf_counter()
 
-        planned_steps = [
+        default_canary_steps = [
             {
                 "sub_agent": "explorer",
                 "tool": "search_similar_code",
@@ -143,6 +147,16 @@ class KaggleOfflineKernelRunner:
             },
         ]
 
+        # Determine execution steps: scripted vs autonomous ReAct
+        if planned_steps is not None:
+            active_steps = planned_steps
+        elif self.inference_engine is not None:
+            active_steps = None
+        elif self.dry_run:
+            active_steps = default_canary_steps
+        else:
+            active_steps = None
+
         for idx, inst in enumerate(target_instances, 1):
             inst_start = time.perf_counter()
             logger.info(
@@ -160,7 +174,8 @@ class KaggleOfflineKernelRunner:
             session, metric = self.runner.benchmark_on_instance(
                 instance=inst,
                 harness=self.harness,
-                planned_steps=planned_steps,
+                planned_steps=active_steps,
+                inference_engine=self.inference_engine,
                 base_files=base_files,
             )
 
