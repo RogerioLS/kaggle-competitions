@@ -4,6 +4,7 @@ title: "Gemma 4 Autonomous ReAct Engine & Dynamic Tool-Calling Loop"
 area: competition/gemma-developer-agent
 type: feature
 milestone: 4
+github_issue: 24
 ---
 
 ## 🎯 Task Objective
