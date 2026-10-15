@@ -221,6 +221,20 @@ def setup_tasks(token: str, milestone_map: Dict[str, int]) -> None:
             "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
             "labels": ["area: competition", "area: submission", "type: feature", "priority: high"],
         },
+        {
+            "id": "TASK-09",
+            "title": ("[TASK-09] Gemma 4 Autonomous ReAct Engine & Dynamic Tool-Calling Loop"),
+            "file": "task-09-gemma4-react-engine.md",
+            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
+            "labels": ["area: agent", "type: feature", "priority: high"],
+        },
+        {
+            "id": "TASK-10",
+            "title": ("[TASK-10] Interactive Kaggle GPU Evaluation Notebook & Benchmark Telemetry"),
+            "file": "task-10-kaggle-evaluation-notebook.md",
+            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
+            "labels": ["area: harness", "area: competition", "type: feature", "priority: high"],
+        },
     ]
 
     for task in task_definitions:

@@ -118,6 +118,51 @@ The competition sandbox provides 9 native tools to the agent:
 | **[TASK-06]** | Gemma 4 Post-Training & LoRA Adapter Pipeline | [#11](https://github.com/RogerioLS/kaggle-competitions/issues/11) | 🟢 Completed | `main` |
 | **[TASK-07]** | Kaggle Code Submission Automation & Offline Kernel | [#20](https://github.com/RogerioLS/kaggle-competitions/issues/20) | 🟢 Completed | `feat/task-07-kaggle-submission-and-kernel` |
 | **[TASK-08]** | GitHub-to-Kaggle Dataset Sync Automation & CI/CD | [#22](https://github.com/RogerioLS/kaggle-competitions/issues/22) | 🟢 Completed | `feat/task-08-kaggle-dataset-sync` |
+| **[TASK-09]** | Gemma 4 Autonomous ReAct Engine & Tool-Calling Loop | Pending | ⚪ Planned | `feat/task-09-gemma4-react-engine` |
+| **[TASK-10]** | Interactive Kaggle GPU Evaluation Notebook & Telemetry | Pending | ⚪ Planned | `feat/task-10-kaggle-evaluation-notebook` |
+
+---
+
+## 🔬 Fluxo Autônomo de Resolução (Closed-Loop ReAct Engine)
+
+Para você ter total controle do fluxo, aqui está a anatomia exata do que o código vai fazer a cada passo:
+
+```text
+        ┌────────────────────┐            ┌─────────────────────┐      ┌────────────────────┐  ┌─────┐
+        │ ReAct Orchestrator │            │ Gemma 4 31B (W4A16) │      │ Subprocess Sandbox │  │ SWE │
+        └────────────────────┘            └─────────────────────┘      └────────────────────┘  └─────┘
+                   │                                 │                             │                  │
+                   ◄─────────────────Entrega problem_statement (ex: Bug no FastAPI)───────────────────│
+ ┤ loop Ciclo Autônomo de Resolução (até 30 turnos) ├
+                   │                                 │                             │                  │
+                   │Envia histórico + ferramentas disponíveis (<start_of_turn>user)│                  │
+                   │                                 │                             │                  │
+                   ◄Responde com Pensamento + Ação JSON (<start_of_turn>model)     │                  │
+ ┤ alt Ação: Navegar no Código ├
+                   │                                 │                             │                  │
+                   │────────search_similar_code(query) ou read_file(path)──────────►                  │
+                   │                                 │                             │                  │
+                   ◄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈Retorna código ou nós do grafo┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈│                  │
+                   │                                 │                             │                  │
+                   │─────────────write_file("reproducer.py", content)──────────────►                  │
+                   │                                 │                             │                  │
+                   ◄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈Arquivo criado com sucesso┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈│                  │
+                   │                                 │                             │                  │
+                   │──────────────edit_file(path, old_str, new_str)────────────────►                  │
+                   │                                 │                             │                  │
+                   ◄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈Linhas alteradas com sucesso┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈│                  │
+                   │                                 │                             │                  │
+                   │─────────────run_command("pytest reproducer.py")───────────────►                  │
+                   │                                 │                             │                  │
+                   ◄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈Traceback ou "All tests passed!"┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈│                  │
+                   │                                 │                             │                  │
+                   │Devolve o resultado da ferramenta como Observação              │                  │
+                   │                                 │                             │                  │
+                   │──────────submit_patch() -> captura "git diff HEAD"────────────►                  │
+                   │                                 │                             │                  │
+                   │                                 │                             │Patch final gerado►para submissão
+                   │                                 │                             │                  │
+```
 
 ---
 
