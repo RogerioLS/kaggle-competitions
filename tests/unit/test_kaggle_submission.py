@@ -123,6 +123,7 @@ class TestSubmitKaggleCLI:
 
     def test_execute_submission_missing_credentials(self, tmp_path, monkeypatch) -> None:
         """Live submission without credentials halts with exit code 1."""
+        monkeypatch.delenv("KAGGLE_API_TOKEN", raising=False)
         monkeypatch.delenv("KAGGLE_USERNAME", raising=False)
         monkeypatch.delenv("KAGGLE_KEY", raising=False)
 

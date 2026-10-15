@@ -137,33 +137,39 @@ class DeclarativeAgentRunner:
         # Check total budget
         if session.turns_used >= self.config.budget.max_turns:
             session.budget_exhausted = True
-            return TurnRecord(
+            rec = TurnRecord(
                 turn_index=turn_idx,
                 sub_agent=sub_agent_name,
                 observation="Turn budget exhausted.",
                 is_error=True,
             )
+            session.history.append(rec)
+            return rec
 
         # Check timeout guardrail
         if active_start > 0:
             elapsed = time.perf_counter() - active_start
             if elapsed >= self.config.budget.timeout_seconds:
                 session.timed_out = True
-                return TurnRecord(
+                rec = TurnRecord(
                     turn_index=turn_idx,
                     sub_agent=sub_agent_name,
                     observation=f"Session timed out after {elapsed:.2f}s.",
                     is_error=True,
                 )
+                session.history.append(rec)
+                return rec
 
         sub_agent = self.config.sub_agents.get(sub_agent_name)
         if not sub_agent:
-            return TurnRecord(
+            rec = TurnRecord(
                 turn_index=turn_idx,
                 sub_agent=sub_agent_name,
                 observation=f"Unknown sub-agent: {sub_agent_name}",
                 is_error=True,
             )
+            session.history.append(rec)
+            return rec
 
         # Enforce tool permissions
         if tool_name not in sub_agent.allowed_tools:
@@ -172,7 +178,7 @@ class DeclarativeAgentRunner:
                 f"to call '{tool_name}'. Allowed: {sub_agent.allowed_tools}"
             )
             session.turns_used += 1
-            return TurnRecord(
+            rec = TurnRecord(
                 turn_index=turn_idx,
                 sub_agent=sub_agent_name,
                 tool_call=ToolCall(tool_name, arguments),
@@ -180,12 +186,14 @@ class DeclarativeAgentRunner:
                 duration_seconds=round(time.perf_counter() - turn_start, 3),
                 is_error=True,
             )
+            session.history.append(rec)
+            return rec
 
         handler = self._tools.get(tool_name)
         if not handler:
             obs = f"Unimplemented tool: {tool_name}"
             session.turns_used += 1
-            return TurnRecord(
+            rec = TurnRecord(
                 turn_index=turn_idx,
                 sub_agent=sub_agent_name,
                 tool_call=ToolCall(tool_name, arguments),
@@ -193,6 +201,8 @@ class DeclarativeAgentRunner:
                 duration_seconds=round(time.perf_counter() - turn_start, 3),
                 is_error=True,
             )
+            session.history.append(rec)
+            return rec
 
         try:
             obs = str(handler(**arguments))
@@ -271,20 +281,52 @@ class DeclarativeAgentRunner:
         session.duration_seconds = round(time.perf_counter() - start_time, 3)
         return session
 
+    def solve_instance(
+        self,
+        instance: SWEInstance,
+        inference_engine: Optional[Any] = None,
+        base_files: Optional[Dict[str, str]] = None,
+    ) -> AgentSessionResult:
+        """Autonomously resolves a SWEInstance using the closed-loop ReAct orchestrator.
+
+        Args:
+            instance: SWEInstance containing issue description and repository context.
+            inference_engine: Optional InferenceEngine instance. Defaults to MockInferenceEngine.
+            base_files: Optional dict mapping relative file paths to content strings.
+
+        Returns:
+            AgentSessionResult containing generated patch and execution trace.
+        """
+        from competitions.gemma_developer_agent.agent.inference_engine import (
+            MockInferenceEngine,
+        )
+        from competitions.gemma_developer_agent.agent.react_orchestrator import (
+            ReActOrchestrator,
+        )
+
+        engine = inference_engine or MockInferenceEngine()
+        orchestrator = ReActOrchestrator(runner=self, inference_engine=engine)
+        return orchestrator.solve(instance=instance, base_files=base_files)
+
     def benchmark_on_instance(
         self,
         instance: SWEInstance,
         harness: LocalSWEHarness,
-        planned_steps: List[Dict[str, Any]],
+        planned_steps: Optional[List[Dict[str, Any]]] = None,
+        inference_engine: Optional[Any] = None,
         base_files: Optional[Dict[str, str]] = None,
         test_cmd: Optional[List[str]] = None,
     ) -> Tuple[AgentSessionResult, InstanceMetric]:
-        """Executes agent plan against an isolated sandbox and benchmarks outcome.
+        """Executes agent against an isolated sandbox and benchmarks outcome.
+
+        If planned_steps is provided, executes the scripted multi-agent workflow.
+        Otherwise, launches the autonomous closed-loop ReAct orchestrator.
 
         Args:
             instance: Target SWEInstance task definition.
             harness: LocalSWEHarness evaluation engine.
-            planned_steps: List of dicts specifying sub_agent, tool, and arguments.
+            planned_steps: Optional list of dicts specifying scripted steps.
+            inference_engine: Optional InferenceEngine instance for autonomous mode.
             base_files: Optional dict mapping relative file paths to content strings.
             test_cmd: Optional custom test execution command.
 
@@ -300,7 +342,13 @@ class DeclarativeAgentRunner:
             orig_sandbox = self.sandbox
             self.sandbox = run_sandbox
             try:
-                session = self.run_workflow_plan(instance, planned_steps)
+                if planned_steps is not None:
+                    session = self.run_workflow_plan(instance, planned_steps)
+                else:
+                    session = self.solve_instance(
+                        instance=instance,
+                        inference_engine=inference_engine,
+                    )
             finally:
                 self.sandbox = orig_sandbox
 
@@ -316,7 +364,8 @@ class DeclarativeAgentRunner:
         self,
         instances: List[SWEInstance],
         harness: LocalSWEHarness,
-        plans_map: Dict[str, List[Dict[str, Any]]],
+        plans_map: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+        inference_engine: Optional[Any] = None,
         base_files_map: Optional[Dict[str, Dict[str, str]]] = None,
         test_cmd: Optional[List[str]] = None,
     ) -> Tuple[List[AgentSessionResult], BenchmarkSummary]:
@@ -325,7 +374,8 @@ class DeclarativeAgentRunner:
         Args:
             instances: List of SWEInstance tasks.
             harness: LocalSWEHarness evaluation engine.
-            plans_map: Dict mapping instance_id to list of planned execution steps.
+            plans_map: Optional mapping of instance_id to list of planned steps.
+            inference_engine: Optional InferenceEngine for autonomous resolution.
             base_files_map: Optional mapping of instance_id to base files dict.
             test_cmd: Optional custom test execution command.
 
@@ -335,14 +385,16 @@ class DeclarativeAgentRunner:
         sessions: List[AgentSessionResult] = []
         metrics: List[InstanceMetric] = []
         base_map = base_files_map or {}
+        p_map = plans_map or {}
 
         for inst in instances:
-            plan = plans_map.get(inst.instance_id, [])
+            plan = p_map.get(inst.instance_id) if plans_map is not None else None
             base_files = base_map.get(inst.instance_id)
             session, metric = self.benchmark_on_instance(
                 instance=inst,
                 harness=harness,
                 planned_steps=plan,
+                inference_engine=inference_engine,
                 base_files=base_files,
                 test_cmd=test_cmd,
             )
