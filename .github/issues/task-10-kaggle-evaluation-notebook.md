@@ -4,6 +4,7 @@ title: "Interactive Kaggle GPU Evaluation Notebook & Benchmark Telemetry"
 area: competition/gemma-developer-agent
 type: feature
 milestone: 4
+github_issue: 26
 ---
 
 ## 🎯 Task Objective
