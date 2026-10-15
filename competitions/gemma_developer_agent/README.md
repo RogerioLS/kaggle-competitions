@@ -127,41 +127,39 @@ The competition sandbox provides 9 native tools to the agent:
 
 Para você ter total controle do fluxo, aqui está a anatomia exata do que o código vai fazer a cada passo:
 
-```text
-        ┌────────────────────┐            ┌─────────────────────┐      ┌────────────────────┐  ┌─────┐
-        │ ReAct Orchestrator │            │ Gemma 4 31B (W4A16) │      │ Subprocess Sandbox │  │ SWE │
-        └────────────────────┘            └─────────────────────┘      └────────────────────┘  └─────┘
-                   │                                 │                             │                  │
-                   ◄─────────────────Entrega problem_statement (ex: Bug no FastAPI)───────────────────│
- ┤ loop Ciclo Autônomo de Resolução (até 30 turnos) ├
-                   │                                 │                             │                  │
-                   │Envia histórico + ferramentas disponíveis (<start_of_turn>user)│                  │
-                   │                                 │                             │                  │
-                   ◄Responde com Pensamento + Ação JSON (<start_of_turn>model)     │                  │
- ┤ alt Ação: Navegar no Código ├
-                   │                                 │                             │                  │
-                   │────────search_similar_code(query) ou read_file(path)──────────►                  │
-                   │                                 │                             │                  │
-                   ◄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈Retorna código ou nós do grafo┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈│                  │
-                   │                                 │                             │                  │
-                   │─────────────write_file("reproducer.py", content)──────────────►                  │
-                   │                                 │                             │                  │
-                   ◄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈Arquivo criado com sucesso┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈│                  │
-                   │                                 │                             │                  │
-                   │──────────────edit_file(path, old_str, new_str)────────────────►                  │
-                   │                                 │                             │                  │
-                   ◄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈Linhas alteradas com sucesso┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈│                  │
-                   │                                 │                             │                  │
-                   │─────────────run_command("pytest reproducer.py")───────────────►                  │
-                   │                                 │                             │                  │
-                   ◄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈Traceback ou "All tests passed!"┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈│                  │
-                   │                                 │                             │                  │
-                   │Devolve o resultado da ferramenta como Observação              │                  │
-                   │                                 │                             │                  │
-                   │──────────submit_patch() -> captura "git diff HEAD"────────────►                  │
-                   │                                 │                             │                  │
-                   │                                 │                             │Patch final gerado►para submissão
-                   │                                 │                             │                  │
+```mermaid
+sequenceDiagram
+    autonumber
+    actor SWE as SWE-bench Task
+    participant Orchestrator as ReAct Orchestrator
+    participant Model as Gemma 4 31B (W4A16)
+    participant Sandbox as Subprocess Sandbox
+
+    SWE->>Orchestrator: Entrega problem_statement (ex: Bug no FastAPI)
+
+    loop Ciclo Autônomo de Resolução (até 30 turnos)
+        Orchestrator->>Model: Envia histórico + ferramentas disponíveis (&lt;start_of_turn&gt;user)
+        Model-->>Orchestrator: Responde com Pensamento + Ação JSON (&lt;start_of_turn&gt;model)
+
+        alt Ação: Navegar no Código
+            Orchestrator->>Sandbox: search_similar_code(query) ou read_file(path)
+            Sandbox-->>Orchestrator: Retorna código ou nós do grafo
+        else Ação: Reproduzir o Bug
+            Orchestrator->>Sandbox: write_file("reproducer.py", content)
+            Sandbox-->>Orchestrator: Arquivo criado com sucesso
+        else Ação: Editar Código (Correção)
+            Orchestrator->>Sandbox: edit_file(path, old_str, new_str)
+            Sandbox-->>Orchestrator: Linhas alteradas com sucesso
+        else Ação: Validar com Testes
+            Orchestrator->>Sandbox: run_command("pytest reproducer.py")
+            Sandbox-->>Orchestrator: Traceback ou "All tests passed!"
+        end
+
+        Orchestrator->>Model: Devolve o resultado da ferramenta como Observação
+    end
+
+    Orchestrator->>Sandbox: submit_patch() -> captura "git diff HEAD"
+    Sandbox-->>SWE: Patch final gerado para submissão
 ```
 
 ---
