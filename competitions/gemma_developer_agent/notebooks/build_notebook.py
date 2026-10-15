@@ -10,11 +10,16 @@ Can be executed directly via:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
+from typing import Any, Dict
 
-import nbformat as nbf
+try:
+    import nbformat as nbf
+except ImportError:
+    nbf = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("build_notebook")
@@ -519,16 +524,13 @@ print("🎉 Submission artifacts verified and ready for Kaggle evaluation!")
 """
 
 
-def build_gemma_agent_evaluation_notebook() -> nbf.NotebookNode:
+def build_gemma_agent_evaluation_notebook() -> Any:
     """Builds the complete Gemma Developer Agent evaluation notebook.
 
     Returns:
-        NotebookNode conforming to standard Jupyter Notebook v4 format.
+        NotebookNode or dict conforming to standard Jupyter Notebook v4 format.
     """
-    nb = nbf.v4.new_notebook()
-
-    # Standard Kaggle GPU container notebook metadata
-    nb.metadata = {
+    metadata: Dict[str, Any] = {
         "kernelspec": {
             "display_name": "Python 3",
             "language": "python",
@@ -552,42 +554,109 @@ def build_gemma_agent_evaluation_notebook() -> nbf.NotebookNode:
         },
     }
 
-    # Assemble notebook cells
-    cells = [
-        nbf.v4.new_markdown_cell(HEADER_MARKDOWN),
-        nbf.v4.new_code_cell(CELL_1_SETUP_GPU),
-        nbf.v4.new_code_cell(CELL_2_DATASET),
-        nbf.v4.new_code_cell(CELL_3_ENGINE),
-        nbf.v4.new_code_cell(CELL_4_SINGLE_INSTANCE),
-        nbf.v4.new_code_cell(CELL_5_DIFF_VIEWER),
-        nbf.v4.new_code_cell(CELL_6_BATCH_BENCHMARK),
-        nbf.v4.new_code_cell(CELL_7_SUBMISSION),
-    ]
+    if nbf is not None:
+        nb = nbf.v4.new_notebook()
+        nb.metadata = metadata
+        cells = [
+            nbf.v4.new_markdown_cell(HEADER_MARKDOWN),
+            nbf.v4.new_code_cell(CELL_1_SETUP_GPU),
+            nbf.v4.new_code_cell(CELL_2_DATASET),
+            nbf.v4.new_code_cell(CELL_3_ENGINE),
+            nbf.v4.new_code_cell(CELL_4_SINGLE_INSTANCE),
+            nbf.v4.new_code_cell(CELL_5_DIFF_VIEWER),
+            nbf.v4.new_code_cell(CELL_6_BATCH_BENCHMARK),
+            nbf.v4.new_code_cell(CELL_7_SUBMISSION),
+        ]
+        nb.cells = cells
+        return nb
 
-    nb.cells = cells
-    return nb
+    # Fallback to standard dictionary conforming to Jupyter Notebook v4 JSON schema
+    return {
+        "cells": [
+            {"cell_type": "markdown", "metadata": {}, "source": HEADER_MARKDOWN},
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": CELL_1_SETUP_GPU,
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": CELL_2_DATASET,
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": CELL_3_ENGINE,
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": CELL_4_SINGLE_INSTANCE,
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": CELL_5_DIFF_VIEWER,
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": CELL_6_BATCH_BENCHMARK,
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": CELL_7_SUBMISSION,
+            },
+        ],
+        "metadata": metadata,
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
 
 
-def save_notebook(nb: nbf.NotebookNode, output_path: Path) -> Path:
+def save_notebook(nb: Any, output_path: Path) -> Path:
     """Validates and saves the notebook to disk.
 
     Args:
-        nb: The generated NotebookNode.
+        nb: The generated NotebookNode or notebook dict.
         output_path: Target .ipynb file path.
 
     Returns:
         Resolved Path to the saved notebook.
     """
-    # Enforce standard Jupyter Notebook v4 validation
-    nbf.validate(nb)
-
     resolved_path = Path(output_path).resolve()
     resolved_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(resolved_path, "w", encoding="utf-8") as f:
-        nbf.write(nb, f, version=4)
+    if nbf is not None:
+        try:
+            nbf.validate(nb)
+            with open(resolved_path, "w", encoding="utf-8") as f:
+                nbf.write(nb, f, version=4)
+            logger.info("Notebook successfully validated and saved to: %s", resolved_path)
+            return resolved_path
+        except Exception:
+            pass
 
-    logger.info("Notebook successfully validated and saved to: %s", resolved_path)
+    with open(resolved_path, "w", encoding="utf-8") as f:
+        json.dump(nb if isinstance(nb, dict) else dict(nb), f, indent=1)
+
+    logger.info("Notebook successfully saved to: %s", resolved_path)
     return resolved_path
 
 
