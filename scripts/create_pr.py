@@ -144,11 +144,19 @@ def read_issue_markdown(issue_num: int, task_id: Optional[str] = None) -> Option
         return None
 
     target_file = None
-    for f in issues_dir.glob("*.md"):
-        content = f.read_text(encoding="utf-8")
-        if f"github_issue: {issue_num}" in content or (task_id and f"id: {task_id}" in content):
-            target_file = f
-            break
+    if task_id:
+        for f in issues_dir.glob("*.md"):
+            content = f.read_text(encoding="utf-8")
+            if f"id: {task_id}" in content:
+                target_file = f
+                break
+
+    if not target_file:
+        for f in issues_dir.glob("*.md"):
+            content = f.read_text(encoding="utf-8")
+            if f"github_issue: {issue_num}" in content:
+                target_file = f
+                break
 
     if not target_file:
         return None
