@@ -88,17 +88,21 @@ import sys
 from pathlib import Path
 
 # Configure import paths for Kaggle or local environments
+# Ensure /kaggle/input itself is never in sys.path (it shadows competitions package)
+sys.path = [p for p in sys.path if Path(p).resolve() != Path("/kaggle/input").resolve()]
+
 REPO_CANDIDATES = [
     Path.cwd(),
     Path.cwd().parent,
     Path("/kaggle/working"),
     Path("/kaggle/input/gemma-agent-code"),
     Path("/kaggle/input/gemma-developer-agent"),
+    Path("/kaggle/input/datasets/rogeriolopesdasilva/gemma-agent-code"),
 ]
 
 mounted = False
 for candidate in REPO_CANDIDATES:
-    if candidate.is_dir() and (candidate / "competitions").is_dir():
+    if candidate.is_dir() and (candidate / "competitions" / "gemma_developer_agent").is_dir():
         cand_str = str(candidate.resolve())
         if cand_str not in sys.path:
             sys.path.insert(0, cand_str)
@@ -107,14 +111,26 @@ for candidate in REPO_CANDIDATES:
         break
 
 if not mounted and Path("/kaggle/input").is_dir():
-    for comp_dir in Path("/kaggle/input").glob("**/competitions"):
-        if comp_dir.is_dir():
-            root_str = str(comp_dir.parent.resolve())
+    for target_dir in sorted(
+        Path("/kaggle/input").glob("**/competitions/gemma_developer_agent")
+    ):
+        if target_dir.is_dir():
+            root_str = str(target_dir.parent.parent.resolve())
             if root_str not in sys.path:
                 sys.path.insert(0, root_str)
                 print(f"Mounted package root dynamically from: {root_str}")
             mounted = True
             break
+
+# Invalidate cached namespace modules if gemma_developer_agent was not importable
+if "competitions" in sys.modules:
+    try:
+        import competitions.gemma_developer_agent  # noqa: F401
+    except (ModuleNotFoundError, ImportError):
+        sys.modules.pop("competitions", None)
+        for mod in list(sys.modules.keys()):
+            if mod.startswith("competitions."):
+                sys.modules.pop(mod, None)
 
 import torch
 
@@ -145,6 +161,9 @@ CELL_2_DATASET = """# Cell 2: Ingestion & Dataset Mounting
 import sys
 from pathlib import Path
 
+# Ensure /kaggle/input itself is never in sys.path (it shadows competitions package)
+sys.path = [p for p in sys.path if Path(p).resolve() != Path("/kaggle/input").resolve()]
+
 # 0. Ensure package root is mounted to sys.path even if Cell 1 was skipped
 REPO_CANDIDATES = [
     Path.cwd(),
@@ -152,24 +171,41 @@ REPO_CANDIDATES = [
     Path("/kaggle/working"),
     Path("/kaggle/input/gemma-agent-code"),
     Path("/kaggle/input/gemma-developer-agent"),
+    Path("/kaggle/input/datasets/rogeriolopesdasilva/gemma-agent-code"),
 ]
 
 for candidate in REPO_CANDIDATES:
-    if candidate.is_dir() and (candidate / "competitions").is_dir():
+    if candidate.is_dir() and (candidate / "competitions" / "gemma_developer_agent").is_dir():
         cand_str = str(candidate.resolve())
         if cand_str not in sys.path:
             sys.path.insert(0, cand_str)
         break
 
-if not any(Path(p).joinpath("competitions").is_dir() for p in sys.path if Path(p).is_dir()):
+if not any(
+    Path(p).joinpath("competitions", "gemma_developer_agent").is_dir()
+    for p in sys.path
+    if Path(p).is_dir()
+):
     if Path("/kaggle/input").is_dir():
-        for comp_dir in Path("/kaggle/input").glob("**/competitions"):
-            if comp_dir.is_dir():
-                root_str = str(comp_dir.parent.resolve())
+        for target_dir in sorted(
+            Path("/kaggle/input").glob("**/competitions/gemma_developer_agent")
+        ):
+            if target_dir.is_dir():
+                root_str = str(target_dir.parent.parent.resolve())
                 if root_str not in sys.path:
                     sys.path.insert(0, root_str)
                     print(f"Mounted package root to sys.path: {root_str}")
                 break
+
+# Invalidate cached namespace modules if gemma_developer_agent was not importable
+if "competitions" in sys.modules:
+    try:
+        import competitions.gemma_developer_agent  # noqa: F401
+    except (ModuleNotFoundError, ImportError):
+        sys.modules.pop("competitions", None)
+        for mod in list(sys.modules.keys()):
+            if mod.startswith("competitions."):
+                sys.modules.pop(mod, None)
 
 from competitions.gemma_developer_agent.evaluation.dataset_loader import (
     DatasetLoader,
@@ -177,8 +213,12 @@ from competitions.gemma_developer_agent.evaluation.dataset_loader import (
 
 # 1. Resolve agent configuration path
 AGENT_YAML_CANDIDATES = [
-    Path("/kaggle/input/gemma-agent-code/agent/agent.yaml"),
+    Path(
+        "/kaggle/input/datasets/rogeriolopesdasilva/gemma-agent-code"
+        "/competitions/gemma_developer_agent/agent/agent.yaml"
+    ),
     Path("/kaggle/input/gemma-agent-code/competitions/gemma_developer_agent/agent/agent.yaml"),
+    Path("/kaggle/input/gemma-agent-code/agent/agent.yaml"),
     Path("competitions/gemma_developer_agent/agent/agent.yaml"),
     Path("../competitions/gemma_developer_agent/agent/agent.yaml"),
 ]
@@ -191,10 +231,17 @@ for candidate in AGENT_YAML_CANDIDATES:
 
 if not agent_yaml_path and Path("/kaggle/input").is_dir():
     # Prefer agent.yaml inside our gemma-agent-code codebase first (exclude sample_submission)
-    for candidate in sorted(Path("/kaggle/input").glob("**/agent.yaml")):
-        if candidate.is_file() and "sample_submission" not in str(candidate):
+    for candidate in sorted(
+        Path("/kaggle/input").glob("**/competitions/gemma_developer_agent/agent/agent.yaml")
+    ):
+        if candidate.is_file():
             agent_yaml_path = candidate.resolve()
             break
+    if not agent_yaml_path:
+        for candidate in sorted(Path("/kaggle/input").glob("**/agent.yaml")):
+            if candidate.is_file() and "sample_submission" not in str(candidate):
+                agent_yaml_path = candidate.resolve()
+                break
 
 if not agent_yaml_path:
     raise FileNotFoundError("Could not locate agent.yaml in known candidate paths.")
