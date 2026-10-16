@@ -318,6 +318,7 @@ class DeclarativeAgentRunner:
         inference_engine: Optional[Any] = None,
         base_files: Optional[Dict[str, str]] = None,
         test_cmd: Optional[List[str]] = None,
+        apply_test_patch: bool = True,
     ) -> Tuple[AgentSessionResult, InstanceMetric]:
         """Executes agent against an isolated sandbox and benchmarks outcome.
 
@@ -331,6 +332,7 @@ class DeclarativeAgentRunner:
             inference_engine: Optional InferenceEngine instance for autonomous mode.
             base_files: Optional dict mapping relative file paths to content strings.
             test_cmd: Optional custom test execution command.
+            apply_test_patch: Whether to apply external task test patches (default: True).
 
         Returns:
             Tuple of (AgentSessionResult, InstanceMetric).
@@ -359,6 +361,7 @@ class DeclarativeAgentRunner:
             agent_patch=session.patch,
             base_files=base_files,
             test_cmd=test_cmd,
+            apply_test_patch=apply_test_patch,
         )
         return session, metric
 
@@ -370,6 +373,7 @@ class DeclarativeAgentRunner:
         inference_engine: Optional[Any] = None,
         base_files_map: Optional[Dict[str, Dict[str, str]]] = None,
         test_cmd: Optional[List[str]] = None,
+        apply_test_patch: bool = True,
     ) -> Tuple[List[AgentSessionResult], BenchmarkSummary]:
         """Executes agent workflow across multiple tasks and aggregates metrics.
 
@@ -380,6 +384,7 @@ class DeclarativeAgentRunner:
             inference_engine: Optional InferenceEngine for autonomous resolution.
             base_files_map: Optional mapping of instance_id to base files dict.
             test_cmd: Optional custom test execution command.
+            apply_test_patch: Whether to apply external task test patches (default: True).
 
         Returns:
             Tuple of (List[AgentSessionResult], BenchmarkSummary).
@@ -399,6 +404,7 @@ class DeclarativeAgentRunner:
                 inference_engine=inference_engine,
                 base_files=base_files,
                 test_cmd=test_cmd,
+                apply_test_patch=apply_test_patch,
             )
             sessions.append(session)
             metrics.append(metric)

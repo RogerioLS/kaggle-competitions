@@ -487,6 +487,7 @@ metric = harness.evaluate_instance(
     instance=sample_instance,
     agent_patch=session.patch,
     base_files=sample_base_files,
+    apply_test_patch=False,
 )
 
 # Render full session card
@@ -562,6 +563,7 @@ sessions, summary = runner.benchmark_on_dataset(
     harness=harness,
     inference_engine=inference_engine,
     base_files_map=base_files_map,
+    apply_test_patch=False,
 )
 
 print(

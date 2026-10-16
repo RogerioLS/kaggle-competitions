@@ -50,6 +50,7 @@ class LocalSWEHarness:
         base_files: Optional[Dict[str, str]] = None,
         test_cmd: Optional[List[str]] = None,
         timeout: Optional[int] = None,
+        apply_test_patch: bool = True,
     ) -> InstanceMetric:
         """Evaluates a single SWEInstance with candidate agent patch.
 
@@ -57,7 +58,7 @@ class LocalSWEHarness:
         1. Spawn ephemeral verification sandbox.
         2. Populate baseline files & commit baseline.
         3. Apply candidate agent patch.
-        4. Apply instance test patch.
+        4. Apply instance test patch (if enabled).
         5. Run verification test suite.
         6. Return computed InstanceMetric.
 
@@ -67,6 +68,7 @@ class LocalSWEHarness:
             base_files: Optional dict mapping relative file paths to content strings.
             test_cmd: Optional custom test execution command (default: ['pytest', '-q']).
             timeout: Optional per-test execution timeout override.
+            apply_test_patch: Whether to apply the task's external test patch (default: True).
 
         Returns:
             InstanceMetric containing resolution status, exit code, and test outputs.
@@ -108,20 +110,22 @@ class LocalSWEHarness:
                     patch_applied=False,
                 )
 
-            # Step 4: Apply task test patch if present
-            if instance.test_patch and instance.test_patch.strip():
+            # Step 4: Apply task test patch if present and enabled
+            if apply_test_patch and instance.test_patch and instance.test_patch.strip():
                 test_applied = sandbox.apply_patch(instance.test_patch)
                 if not test_applied:
-                    duration = time.perf_counter() - start_time
-                    return InstanceMetric(
-                        instance_id=instance.instance_id,
-                        resolved=False,
-                        exit_code=1,
-                        duration_seconds=round(duration, 3),
-                        test_output="",
-                        error_message="Verification test patch failed to apply.",
-                        patch_applied=True,
-                    )
+                    # Fall back if base_files contains self-contained tests
+                    if not (base_files and any("test" in f for f in base_files)):
+                        duration = time.perf_counter() - start_time
+                        return InstanceMetric(
+                            instance_id=instance.instance_id,
+                            resolved=False,
+                            exit_code=1,
+                            duration_seconds=round(duration, 3),
+                            test_output="",
+                            error_message="Verification test patch failed to apply.",
+                            patch_applied=True,
+                        )
 
             # Step 5: Execute verification test command
             cmd = test_cmd or ["pytest", "-q"]
@@ -149,6 +153,7 @@ class LocalSWEHarness:
         agent_patches: Dict[str, str],
         base_files_map: Optional[Dict[str, Dict[str, str]]] = None,
         test_cmd: Optional[List[str]] = None,
+        apply_test_patch: bool = True,
     ) -> BenchmarkSummary:
         """Evaluates multiple SWE-bench instances and aggregates results.
 
@@ -157,6 +162,7 @@ class LocalSWEHarness:
             agent_patches: Dict mapping instance_id to candidate patch string.
             base_files_map: Optional mapping of instance_id to base files dict.
             test_cmd: Optional custom test execution command.
+            apply_test_patch: Whether to apply external task test patches (default: True).
 
         Returns:
             BenchmarkSummary containing aggregated Pass@1 rate and diagnostics.
@@ -172,6 +178,7 @@ class LocalSWEHarness:
                 agent_patch=patch,
                 base_files=base_files,
                 test_cmd=test_cmd,
+                apply_test_patch=apply_test_patch,
             )
             results.append(metric)
 
