@@ -190,8 +190,9 @@ for candidate in AGENT_YAML_CANDIDATES:
         break
 
 if not agent_yaml_path and Path("/kaggle/input").is_dir():
-    for candidate in Path("/kaggle/input").glob("**/agent.yaml"):
-        if candidate.is_file():
+    # Prefer agent.yaml inside our gemma-agent-code codebase first (exclude sample_submission)
+    for candidate in sorted(Path("/kaggle/input").glob("**/agent.yaml")):
+        if candidate.is_file() and "sample_submission" not in str(candidate):
             agent_yaml_path = candidate.resolve()
             break
 
@@ -202,11 +203,10 @@ print(f"Agent Config Path : {agent_yaml_path}")
 
 # 2. Resolve dataset path or initialize mock fixtures
 DATASET_CANDIDATES = [
-    Path("/kaggle/input/swe-bench-dataset/tasks.jsonl"),
+    Path("/kaggle/input/competitions/gemma-4-developer-agent/tasks.jsonl"),
     Path("/kaggle/input/gemma-4-developer-agent/tasks.jsonl"),
+    Path("/kaggle/input/swe-bench-dataset/tasks.jsonl"),
     Path("/kaggle/input/gemma-developer-agent/tasks.jsonl"),
-    Path("artifacts/mock_data/tasks.jsonl"),
-    Path("../artifacts/mock_data/tasks.jsonl"),
     Path("data/gemma-4-developer-agent/tasks.jsonl"),
 ]
 
@@ -217,15 +217,19 @@ for candidate in DATASET_CANDIDATES:
         break
 
 if not tasks_path and Path("/kaggle/input").is_dir():
-    for candidate in Path("/kaggle/input").glob("**/tasks.jsonl"):
-        if candidate.is_file():
+    for candidate in sorted(Path("/kaggle/input").glob("**/tasks.jsonl")):
+        if candidate.is_file() and "mock_data" not in str(candidate):
             tasks_path = candidate.resolve()
             break
 
 if not tasks_path:
-    print("Dataset tasks.jsonl not found. Creating mock fixtures...")
-    fixtures_dir = DatasetLoader.create_mock_fixtures(Path("artifacts/mock_data"))
-    tasks_path = (fixtures_dir / "tasks.jsonl").resolve()
+    mock_candidate = Path("artifacts/mock_data/tasks.jsonl")
+    if mock_candidate.is_file():
+        tasks_path = mock_candidate.resolve()
+    else:
+        print("Dataset tasks.jsonl not found. Creating mock fixtures...")
+        fixtures_dir = DatasetLoader.create_mock_fixtures(Path("artifacts/mock_data"))
+        tasks_path = (fixtures_dir / "tasks.jsonl").resolve()
 
 print(f"Dataset Tasks Path: {tasks_path}")
 
