@@ -213,6 +213,8 @@ class DeclarativeAgentRunner:
 
         duration = round(time.perf_counter() - turn_start, 3)
         session.turns_used += 1
+        if not session.sub_agent_trace or session.sub_agent_trace[-1] != sub_agent_name:
+            session.sub_agent_trace.append(sub_agent_name)
 
         record = TurnRecord(
             turn_index=turn_idx,
