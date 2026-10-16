@@ -310,22 +310,23 @@ if USE_MOCK_ENGINE or not torch.cuda.is_available() or model_path is None:
     print("Using MockInferenceEngine with dynamic SWE-bench solver logic (Simulation Mode).")
 
     def dynamic_demo_solver(prompt: str) -> str:
-        \"\"\"Dynamic ReAct solver responding to conversational prompt state.\"\"\"
-        if "search_similar_code" not in prompt:
+        \"\"\"Dynamic ReAct solver responding to conversational observation count.\"\"\"
+        obs_count = prompt.count("Observation (")
+        if obs_count == 0:
             action = {
                 "thought": "Let's explore the codebase for redirect status code handling logic.",
                 "sub_agent": "explorer",
                 "tool": "search_similar_code",
                 "arguments": {"query": "handle_redirect allow_redirects"},
             }
-        elif "read_file" not in prompt:
+        elif obs_count == 1:
             action = {
                 "thought": "Inspecting requests/models.py to locate the redirect logic.",
                 "sub_agent": "locator",
                 "tool": "read_file",
                 "arguments": {"filepath": "requests/models.py", "start_line": 1, "end_line": 25},
             }
-        elif "edit_file" not in prompt:
+        elif obs_count == 2:
             action = {
                 "thought": (
                     "Applying surgical patch to fix redirect status code handling "
@@ -335,8 +336,8 @@ if USE_MOCK_ENGINE or not torch.cuda.is_available() or model_path is None:
                 "tool": "edit_file",
                 "arguments": {
                     "filepath": "requests/models.py",
-                    "old_string": "    pass",
-                    "new_string": "    # fix redirect status handling\\n    pass",
+                    "old_string": "        pass",
+                    "new_string": "        return status_code",
                 },
             }
         else:
