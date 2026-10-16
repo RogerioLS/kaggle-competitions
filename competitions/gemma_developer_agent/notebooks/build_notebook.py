@@ -377,7 +377,10 @@ from competitions.gemma_developer_agent.telemetry import (
     TurnTelemetry,
 )
 
-sample_instance = instances[0]
+sample_instance = next(
+    (inst for inst in instances if "requests" in inst.repo.lower()),
+    instances[0],
+)
 print("=" * 70)
 print(f"Target Instance    : {sample_instance.instance_id}")
 print(f"Target Repository  : {sample_instance.repo}")
@@ -484,7 +487,12 @@ from competitions.gemma_developer_agent.telemetry import (
     RichTelemetryVisualizer,
 )
 
-benchmark_instances = instances[:3] if len(instances) >= 3 else instances
+requests_instances = [inst for inst in instances if "requests" in inst.repo.lower()]
+benchmark_instances = (
+    requests_instances[:2]
+    if len(requests_instances) >= 2
+    else instances[:2]
+)
 print(f"Executing batch benchmark across {len(benchmark_instances)} instances...")
 
 sample_base_code = (
