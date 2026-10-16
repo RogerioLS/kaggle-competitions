@@ -96,13 +96,25 @@ REPO_CANDIDATES = [
     Path("/kaggle/input/gemma-developer-agent"),
 ]
 
+mounted = False
 for candidate in REPO_CANDIDATES:
     if candidate.is_dir() and (candidate / "competitions").is_dir():
         cand_str = str(candidate.resolve())
         if cand_str not in sys.path:
             sys.path.insert(0, cand_str)
             print(f"Mounted package root to sys.path: {cand_str}")
+        mounted = True
         break
+
+if not mounted and Path("/kaggle/input").is_dir():
+    for comp_dir in Path("/kaggle/input").glob("**/competitions"):
+        if comp_dir.is_dir():
+            root_str = str(comp_dir.parent.resolve())
+            if root_str not in sys.path:
+                sys.path.insert(0, root_str)
+                print(f"Mounted package root dynamically from: {root_str}")
+            mounted = True
+            break
 
 import torch
 
@@ -130,7 +142,34 @@ print("=" * 70)
 """
 
 CELL_2_DATASET = """# Cell 2: Ingestion & Dataset Mounting
+import sys
 from pathlib import Path
+
+# 0. Ensure package root is mounted to sys.path even if Cell 1 was skipped
+REPO_CANDIDATES = [
+    Path.cwd(),
+    Path.cwd().parent,
+    Path("/kaggle/working"),
+    Path("/kaggle/input/gemma-agent-code"),
+    Path("/kaggle/input/gemma-developer-agent"),
+]
+
+for candidate in REPO_CANDIDATES:
+    if candidate.is_dir() and (candidate / "competitions").is_dir():
+        cand_str = str(candidate.resolve())
+        if cand_str not in sys.path:
+            sys.path.insert(0, cand_str)
+        break
+
+if not any(Path(p).joinpath("competitions").is_dir() for p in sys.path if Path(p).is_dir()):
+    if Path("/kaggle/input").is_dir():
+        for comp_dir in Path("/kaggle/input").glob("**/competitions"):
+            if comp_dir.is_dir():
+                root_str = str(comp_dir.parent.resolve())
+                if root_str not in sys.path:
+                    sys.path.insert(0, root_str)
+                    print(f"Mounted package root to sys.path: {root_str}")
+                break
 
 from competitions.gemma_developer_agent.evaluation.dataset_loader import (
     DatasetLoader,
@@ -150,6 +189,12 @@ for candidate in AGENT_YAML_CANDIDATES:
         agent_yaml_path = candidate.resolve()
         break
 
+if not agent_yaml_path and Path("/kaggle/input").is_dir():
+    for candidate in Path("/kaggle/input").glob("**/agent.yaml"):
+        if candidate.is_file():
+            agent_yaml_path = candidate.resolve()
+            break
+
 if not agent_yaml_path:
     raise FileNotFoundError("Could not locate agent.yaml in known candidate paths.")
 
@@ -158,6 +203,7 @@ print(f"Agent Config Path : {agent_yaml_path}")
 # 2. Resolve dataset path or initialize mock fixtures
 DATASET_CANDIDATES = [
     Path("/kaggle/input/swe-bench-dataset/tasks.jsonl"),
+    Path("/kaggle/input/gemma-4-developer-agent/tasks.jsonl"),
     Path("/kaggle/input/gemma-developer-agent/tasks.jsonl"),
     Path("artifacts/mock_data/tasks.jsonl"),
     Path("../artifacts/mock_data/tasks.jsonl"),
@@ -169,6 +215,12 @@ for candidate in DATASET_CANDIDATES:
     if candidate.is_file():
         tasks_path = candidate.resolve()
         break
+
+if not tasks_path and Path("/kaggle/input").is_dir():
+    for candidate in Path("/kaggle/input").glob("**/tasks.jsonl"):
+        if candidate.is_file():
+            tasks_path = candidate.resolve()
+            break
 
 if not tasks_path:
     print("Dataset tasks.jsonl not found. Creating mock fixtures...")
@@ -217,7 +269,11 @@ print(
     f"(Model: {agent_config.model})"
 )
 
-# 2. Check for GPU weights vs Mock inference
+# 2. Execution Mode Configuration:
+# - True : Simulation Mode (MockInferenceEngine with dynamic SWE-bench solver)
+# - False: Production GPU Mode (Transformers with Gemma 4 model weights)
+USE_MOCK_ENGINE = True
+
 MODEL_WEIGHTS_CANDIDATES = [
     Path(os.environ.get("GEMMA_MODEL_PATH", "")),
     Path("/kaggle/input/gemma-4-31b-it-qat-w4a16-ct"),
@@ -233,16 +289,25 @@ for candidate in MODEL_WEIGHTS_CANDIDATES:
 
 inference_engine: InferenceEngine
 
-if torch.cuda.is_available() and model_path is not None:
-    print(f"Initializing TransformersInferenceEngine with weights from: {model_path}")
-    inference_engine = TransformersInferenceEngine(
-        model_id_or_path=str(model_path),
-        device="auto",
-        torch_dtype="bfloat16",
-        quantization_bits=4,
-    )
-else:
-    print("Using MockInferenceEngine with dynamic SWE-bench solver logic (Zero-GPU mode).")
+if not USE_MOCK_ENGINE and torch.cuda.is_available() and model_path is not None:
+    try:
+        print(f"Initializing TransformersInferenceEngine with weights from: {model_path}")
+        engine = TransformersInferenceEngine(
+            model_id_or_path=str(model_path),
+            device="auto",
+            torch_dtype="bfloat16",
+            quantization_bits=4,
+        )
+        engine._ensure_loaded()
+        inference_engine = engine
+        print("✔ TransformersInferenceEngine successfully initialized on GPU.")
+    except Exception as exc:
+        print(f"⚠️ GPU Transformers engine initialization failed: {exc}")
+        print("Falling back to MockInferenceEngine with dynamic SWE-bench solver.")
+        USE_MOCK_ENGINE = True
+
+if USE_MOCK_ENGINE or not torch.cuda.is_available() or model_path is None:
+    print("Using MockInferenceEngine with dynamic SWE-bench solver logic (Simulation Mode).")
 
     def dynamic_demo_solver(prompt: str) -> str:
         \"\"\"Dynamic ReAct solver responding to conversational prompt state.\"\"\"
@@ -289,7 +354,7 @@ else:
 
 # 3. Initialize Declarative Runner and Local SWE Harness
 runner = DeclarativeAgentRunner(config=agent_config)
-harness = LocalSWEHarness(base_dir=Path("artifacts/benchmarks"))
+harness = LocalSWEHarness(base_dir=Path("/kaggle/working/artifacts/benchmarks"))
 print("DeclarativeAgentRunner and LocalSWEHarness successfully initialized.")
 """
 
