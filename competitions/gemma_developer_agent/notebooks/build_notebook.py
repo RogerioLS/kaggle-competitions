@@ -483,12 +483,16 @@ from competitions.gemma_developer_agent.telemetry import (
 benchmark_instances = instances[:3] if len(instances) >= 3 else instances
 print(f"Executing batch benchmark across {len(benchmark_instances)} instances...")
 
+sample_base_code = (
+    "def handle_redirect(status_code, allow_redirects=True):\\n"
+    "    if not allow_redirects:\\n"
+    "        pass\\n"
+    "    return status_code\\n"
+)
+
 base_files_map = {
     inst.instance_id: {
-        "requests/models.py": (
-            "def handle_redirect(status_code, allow_redirects=True):\\n"
-            "    pass\\n"
-        ),
+        "requests/models.py": sample_base_code,
         "tests/test_requests.py": "def test_redirect():\\n    assert True\\n",
     }
     for inst in benchmark_instances
