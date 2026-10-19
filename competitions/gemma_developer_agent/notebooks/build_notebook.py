@@ -323,20 +323,31 @@ print(
 # 2. Execution Mode Configuration:
 # - True : Simulation Mode (MockInferenceEngine with dynamic SWE-bench solver)
 # - False: Production GPU Mode (Transformers with Gemma 4 model weights)
-USE_MOCK_ENGINE = True
+USE_MOCK_ENGINE = False
 
 MODEL_WEIGHTS_CANDIDATES = [
     Path(os.environ.get("GEMMA_MODEL_PATH", "")),
-    Path("/kaggle/input/gemma-4-31b-it-qat-w4a16-ct"),
     Path("/kaggle/input/gemma-4-31b-it-qat-w4a16"),
+    Path("/kaggle/input/gemma-4-31b-it-qat-w4a16-ct"),
     Path("/kaggle/input/gemma-4-developer-agent-weights"),
 ]
 
 model_path = None
 for candidate in MODEL_WEIGHTS_CANDIDATES:
-    if candidate and candidate.is_dir():
+    if candidate and candidate.is_dir() and (candidate / "config.json").is_file():
         model_path = candidate.resolve()
         break
+
+if not model_path and Path("/kaggle/input").is_dir():
+    # Dynamically locate any model directory containing config.json and model.safetensors
+    for config_file in sorted(Path("/kaggle/input").glob("**/config.json")):
+        parent = config_file.parent
+        if any(parent.glob("*.safetensors*")):
+            model_path = parent.resolve()
+            break
+
+if model_path:
+    print(f"Discovered Gemma 4 Model Checkpoint: {model_path}")
 
 inference_engine: InferenceEngine
 
@@ -346,8 +357,8 @@ if not USE_MOCK_ENGINE and torch.cuda.is_available() and model_path is not None:
         engine = TransformersInferenceEngine(
             model_id_or_path=str(model_path),
             device="auto",
-            torch_dtype="bfloat16",
-            quantization_bits=4,
+            torch_dtype="auto",
+            quantization_bits=None,
         )
         engine._ensure_loaded()
         inference_engine = engine

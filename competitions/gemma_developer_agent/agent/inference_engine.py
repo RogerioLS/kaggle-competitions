@@ -220,15 +220,15 @@ class TransformersInferenceEngine(InferenceEngine):
         self,
         model_id_or_path: str,
         device: str = "auto",
-        torch_dtype: str = "bfloat16",
-        quantization_bits: Optional[int] = 4,
+        torch_dtype: str = "auto",
+        quantization_bits: Optional[int] = None,
     ) -> None:
         """Initializes transformers model and tokenizer.
 
         Args:
             model_id_or_path: HuggingFace model ID or local directory path.
             device: Target device string ("auto", "cuda", "cpu").
-            torch_dtype: Precision string ("bfloat16", "float16", "float32").
+            torch_dtype: Precision string ("auto", "bfloat16", "float16", "float32").
             quantization_bits: Optional quantization bits (4, 8, or None).
         """
         self.model_id_or_path = model_id_or_path
@@ -268,6 +268,8 @@ class TransformersInferenceEngine(InferenceEngine):
             load_kwargs["torch_dtype"] = torch.bfloat16
         elif self.torch_dtype == "float16":
             load_kwargs["torch_dtype"] = torch.float16
+        elif self.torch_dtype == "auto":
+            load_kwargs["torch_dtype"] = "auto"
 
         if self.quantization_bits == 4:
             try:
