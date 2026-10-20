@@ -1,6 +1,6 @@
 # 📋 Status Geral do Projeto e Guia de Retomada (Handoff)
 
-> **Data de Atualização:** 15 de Outubro de 2026  
+> **Data de Atualização:** 16 de Outubro de 2026  
 > **Repositório:** `RogerioLS/kaggle-competitions`  
 > **Branch Atual:** `main` (100% atualizada e sincronizada com `origin/main`)  
 > **Status de Qualidade:** 🟢 119/119 Testes Unitários Passando | Clean Chassis Compliant  
@@ -23,6 +23,12 @@ Todas as **10 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 | **[TASK-08]** | GitHub-to-Kaggle Dataset Sync Automation & CI/CD | [#22](https://github.com/RogerioLS/kaggle-competitions/issues/22) | PR [#23](https://github.com/RogerioLS/kaggle-competitions/pull/23) | 🟢 `main` |
 | **[TASK-09]** | Gemma 4 Autonomous ReAct Engine & Tool-Calling Loop | [#25](https://github.com/RogerioLS/kaggle-competitions/issues/25) | PR [#24](https://github.com/RogerioLS/kaggle-competitions/pull/24) | 🟢 `main` |
 | **[TASK-10]** | Interactive Kaggle GPU Evaluation Notebook & Telemetry | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | PR [#27](https://github.com/RogerioLS/kaggle-competitions/pull/27) | 🟢 `main` |
+| **[TASK-10.1]** | Kaggle GPU Discovery & Robust Turn Counter | - | PR [#28](https://github.com/RogerioLS/kaggle-competitions/pull/28) | 🟢 `main` |
+| **[TASK-10.2]** | Kaggle Kernel Lightweight Dependencies Fallback | - | PR [#30](https://github.com/RogerioLS/kaggle-competitions/pull/30) | 🟢 `main` |
+| **[TASK-10.3]** | Batch Benchmark Indentation Alignment (100% Pass@1) | - | PR [#31](https://github.com/RogerioLS/kaggle-competitions/pull/31) | 🟢 `main` |
+| **[TASK-10.4]** | Cell 2 Official 22GB Competition Dataset Priority | - | PR [#32](https://github.com/RogerioLS/kaggle-competitions/pull/32) | 🟢 `main` |
+| **[TASK-10.5]** | Namespace Isolation & Cache Eviction (`competitions`) | - | PR [#33](https://github.com/RogerioLS/kaggle-competitions/pull/33) | 🟢 `main` |
+| **[TASK-10.6]** | Test Patch Toggle & Fallback for Demo Workspaces | - | PR [#34](https://github.com/RogerioLS/kaggle-competitions/pull/34) | 🟢 `PR` |
 
 ---
 

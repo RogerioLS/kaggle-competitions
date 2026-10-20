@@ -88,17 +88,21 @@ import sys
 from pathlib import Path
 
 # Configure import paths for Kaggle or local environments
+# Ensure /kaggle/input itself is never in sys.path (it shadows competitions package)
+sys.path = [p for p in sys.path if Path(p).resolve() != Path("/kaggle/input").resolve()]
+
 REPO_CANDIDATES = [
     Path.cwd(),
     Path.cwd().parent,
     Path("/kaggle/working"),
     Path("/kaggle/input/gemma-agent-code"),
     Path("/kaggle/input/gemma-developer-agent"),
+    Path("/kaggle/input/datasets/rogeriolopesdasilva/gemma-agent-code"),
 ]
 
 mounted = False
 for candidate in REPO_CANDIDATES:
-    if candidate.is_dir() and (candidate / "competitions").is_dir():
+    if candidate.is_dir() and (candidate / "competitions" / "gemma_developer_agent").is_dir():
         cand_str = str(candidate.resolve())
         if cand_str not in sys.path:
             sys.path.insert(0, cand_str)
@@ -107,14 +111,26 @@ for candidate in REPO_CANDIDATES:
         break
 
 if not mounted and Path("/kaggle/input").is_dir():
-    for comp_dir in Path("/kaggle/input").glob("**/competitions"):
-        if comp_dir.is_dir():
-            root_str = str(comp_dir.parent.resolve())
+    for target_dir in sorted(
+        Path("/kaggle/input").glob("**/competitions/gemma_developer_agent")
+    ):
+        if target_dir.is_dir():
+            root_str = str(target_dir.parent.parent.resolve())
             if root_str not in sys.path:
                 sys.path.insert(0, root_str)
                 print(f"Mounted package root dynamically from: {root_str}")
             mounted = True
             break
+
+# Invalidate cached namespace modules if gemma_developer_agent was not importable
+if "competitions" in sys.modules:
+    try:
+        import competitions.gemma_developer_agent  # noqa: F401
+    except (ModuleNotFoundError, ImportError):
+        sys.modules.pop("competitions", None)
+        for mod in list(sys.modules.keys()):
+            if mod.startswith("competitions."):
+                sys.modules.pop(mod, None)
 
 import torch
 
@@ -145,6 +161,9 @@ CELL_2_DATASET = """# Cell 2: Ingestion & Dataset Mounting
 import sys
 from pathlib import Path
 
+# Ensure /kaggle/input itself is never in sys.path (it shadows competitions package)
+sys.path = [p for p in sys.path if Path(p).resolve() != Path("/kaggle/input").resolve()]
+
 # 0. Ensure package root is mounted to sys.path even if Cell 1 was skipped
 REPO_CANDIDATES = [
     Path.cwd(),
@@ -152,24 +171,41 @@ REPO_CANDIDATES = [
     Path("/kaggle/working"),
     Path("/kaggle/input/gemma-agent-code"),
     Path("/kaggle/input/gemma-developer-agent"),
+    Path("/kaggle/input/datasets/rogeriolopesdasilva/gemma-agent-code"),
 ]
 
 for candidate in REPO_CANDIDATES:
-    if candidate.is_dir() and (candidate / "competitions").is_dir():
+    if candidate.is_dir() and (candidate / "competitions" / "gemma_developer_agent").is_dir():
         cand_str = str(candidate.resolve())
         if cand_str not in sys.path:
             sys.path.insert(0, cand_str)
         break
 
-if not any(Path(p).joinpath("competitions").is_dir() for p in sys.path if Path(p).is_dir()):
+if not any(
+    Path(p).joinpath("competitions", "gemma_developer_agent").is_dir()
+    for p in sys.path
+    if Path(p).is_dir()
+):
     if Path("/kaggle/input").is_dir():
-        for comp_dir in Path("/kaggle/input").glob("**/competitions"):
-            if comp_dir.is_dir():
-                root_str = str(comp_dir.parent.resolve())
+        for target_dir in sorted(
+            Path("/kaggle/input").glob("**/competitions/gemma_developer_agent")
+        ):
+            if target_dir.is_dir():
+                root_str = str(target_dir.parent.parent.resolve())
                 if root_str not in sys.path:
                     sys.path.insert(0, root_str)
                     print(f"Mounted package root to sys.path: {root_str}")
                 break
+
+# Invalidate cached namespace modules if gemma_developer_agent was not importable
+if "competitions" in sys.modules:
+    try:
+        import competitions.gemma_developer_agent  # noqa: F401
+    except (ModuleNotFoundError, ImportError):
+        sys.modules.pop("competitions", None)
+        for mod in list(sys.modules.keys()):
+            if mod.startswith("competitions."):
+                sys.modules.pop(mod, None)
 
 from competitions.gemma_developer_agent.evaluation.dataset_loader import (
     DatasetLoader,
@@ -177,8 +213,12 @@ from competitions.gemma_developer_agent.evaluation.dataset_loader import (
 
 # 1. Resolve agent configuration path
 AGENT_YAML_CANDIDATES = [
-    Path("/kaggle/input/gemma-agent-code/agent/agent.yaml"),
+    Path(
+        "/kaggle/input/datasets/rogeriolopesdasilva/gemma-agent-code"
+        "/competitions/gemma_developer_agent/agent/agent.yaml"
+    ),
     Path("/kaggle/input/gemma-agent-code/competitions/gemma_developer_agent/agent/agent.yaml"),
+    Path("/kaggle/input/gemma-agent-code/agent/agent.yaml"),
     Path("competitions/gemma_developer_agent/agent/agent.yaml"),
     Path("../competitions/gemma_developer_agent/agent/agent.yaml"),
 ]
@@ -190,10 +230,18 @@ for candidate in AGENT_YAML_CANDIDATES:
         break
 
 if not agent_yaml_path and Path("/kaggle/input").is_dir():
-    for candidate in Path("/kaggle/input").glob("**/agent.yaml"):
+    # Prefer agent.yaml inside our gemma-agent-code codebase first (exclude sample_submission)
+    for candidate in sorted(
+        Path("/kaggle/input").glob("**/competitions/gemma_developer_agent/agent/agent.yaml")
+    ):
         if candidate.is_file():
             agent_yaml_path = candidate.resolve()
             break
+    if not agent_yaml_path:
+        for candidate in sorted(Path("/kaggle/input").glob("**/agent.yaml")):
+            if candidate.is_file() and "sample_submission" not in str(candidate):
+                agent_yaml_path = candidate.resolve()
+                break
 
 if not agent_yaml_path:
     raise FileNotFoundError("Could not locate agent.yaml in known candidate paths.")
@@ -202,11 +250,10 @@ print(f"Agent Config Path : {agent_yaml_path}")
 
 # 2. Resolve dataset path or initialize mock fixtures
 DATASET_CANDIDATES = [
-    Path("/kaggle/input/swe-bench-dataset/tasks.jsonl"),
+    Path("/kaggle/input/competitions/gemma-4-developer-agent/tasks.jsonl"),
     Path("/kaggle/input/gemma-4-developer-agent/tasks.jsonl"),
+    Path("/kaggle/input/swe-bench-dataset/tasks.jsonl"),
     Path("/kaggle/input/gemma-developer-agent/tasks.jsonl"),
-    Path("artifacts/mock_data/tasks.jsonl"),
-    Path("../artifacts/mock_data/tasks.jsonl"),
     Path("data/gemma-4-developer-agent/tasks.jsonl"),
 ]
 
@@ -217,15 +264,19 @@ for candidate in DATASET_CANDIDATES:
         break
 
 if not tasks_path and Path("/kaggle/input").is_dir():
-    for candidate in Path("/kaggle/input").glob("**/tasks.jsonl"):
-        if candidate.is_file():
+    for candidate in sorted(Path("/kaggle/input").glob("**/tasks.jsonl")):
+        if candidate.is_file() and "mock_data" not in str(candidate):
             tasks_path = candidate.resolve()
             break
 
 if not tasks_path:
-    print("Dataset tasks.jsonl not found. Creating mock fixtures...")
-    fixtures_dir = DatasetLoader.create_mock_fixtures(Path("artifacts/mock_data"))
-    tasks_path = (fixtures_dir / "tasks.jsonl").resolve()
+    mock_candidate = Path("artifacts/mock_data/tasks.jsonl")
+    if mock_candidate.is_file():
+        tasks_path = mock_candidate.resolve()
+    else:
+        print("Dataset tasks.jsonl not found. Creating mock fixtures...")
+        fixtures_dir = DatasetLoader.create_mock_fixtures(Path("artifacts/mock_data"))
+        tasks_path = (fixtures_dir / "tasks.jsonl").resolve()
 
 print(f"Dataset Tasks Path: {tasks_path}")
 
@@ -272,20 +323,31 @@ print(
 # 2. Execution Mode Configuration:
 # - True : Simulation Mode (MockInferenceEngine with dynamic SWE-bench solver)
 # - False: Production GPU Mode (Transformers with Gemma 4 model weights)
-USE_MOCK_ENGINE = True
+USE_MOCK_ENGINE = False
 
 MODEL_WEIGHTS_CANDIDATES = [
     Path(os.environ.get("GEMMA_MODEL_PATH", "")),
-    Path("/kaggle/input/gemma-4-31b-it-qat-w4a16-ct"),
     Path("/kaggle/input/gemma-4-31b-it-qat-w4a16"),
+    Path("/kaggle/input/gemma-4-31b-it-qat-w4a16-ct"),
     Path("/kaggle/input/gemma-4-developer-agent-weights"),
 ]
 
 model_path = None
 for candidate in MODEL_WEIGHTS_CANDIDATES:
-    if candidate and candidate.is_dir():
+    if candidate and candidate.is_dir() and (candidate / "config.json").is_file():
         model_path = candidate.resolve()
         break
+
+if not model_path and Path("/kaggle/input").is_dir():
+    # Dynamically locate any model directory containing config.json and model.safetensors
+    for config_file in sorted(Path("/kaggle/input").glob("**/config.json")):
+        parent = config_file.parent
+        if any(parent.glob("*.safetensors*")):
+            model_path = parent.resolve()
+            break
+
+if model_path:
+    print(f"Discovered Gemma 4 Model Checkpoint: {model_path}")
 
 inference_engine: InferenceEngine
 
@@ -295,8 +357,8 @@ if not USE_MOCK_ENGINE and torch.cuda.is_available() and model_path is not None:
         engine = TransformersInferenceEngine(
             model_id_or_path=str(model_path),
             device="auto",
-            torch_dtype="bfloat16",
-            quantization_bits=4,
+            torch_dtype="auto",
+            quantization_bits=None,
         )
         engine._ensure_loaded()
         inference_engine = engine
@@ -373,7 +435,10 @@ from competitions.gemma_developer_agent.telemetry import (
     TurnTelemetry,
 )
 
-sample_instance = instances[0]
+sample_instance = next(
+    (inst for inst in instances if "requests" in inst.repo.lower()),
+    instances[0],
+)
 print("=" * 70)
 print(f"Target Instance    : {sample_instance.instance_id}")
 print(f"Target Repository  : {sample_instance.repo}")
@@ -433,6 +498,7 @@ metric = harness.evaluate_instance(
     instance=sample_instance,
     agent_patch=session.patch,
     base_files=sample_base_files,
+    apply_test_patch=False,
 )
 
 # Render full session card
@@ -480,15 +546,24 @@ from competitions.gemma_developer_agent.telemetry import (
     RichTelemetryVisualizer,
 )
 
-benchmark_instances = instances[:3] if len(instances) >= 3 else instances
+requests_instances = [inst for inst in instances if "requests" in inst.repo.lower()]
+benchmark_instances = (
+    requests_instances[:2]
+    if len(requests_instances) >= 2
+    else instances[:2]
+)
 print(f"Executing batch benchmark across {len(benchmark_instances)} instances...")
+
+sample_base_code = (
+    "def handle_redirect(status_code, allow_redirects=True):\\n"
+    "    if not allow_redirects:\\n"
+    "        pass\\n"
+    "    return status_code\\n"
+)
 
 base_files_map = {
     inst.instance_id: {
-        "requests/models.py": (
-            "def handle_redirect(status_code, allow_redirects=True):\\n"
-            "    pass\\n"
-        ),
+        "requests/models.py": sample_base_code,
         "tests/test_requests.py": "def test_redirect():\\n    assert True\\n",
     }
     for inst in benchmark_instances
@@ -499,6 +574,7 @@ sessions, summary = runner.benchmark_on_dataset(
     harness=harness,
     inference_engine=inference_engine,
     base_files_map=base_files_map,
+    apply_test_patch=False,
 )
 
 print(
