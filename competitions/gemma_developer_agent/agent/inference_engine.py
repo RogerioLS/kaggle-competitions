@@ -222,6 +222,7 @@ class TransformersInferenceEngine(InferenceEngine):
         device: str = "auto",
         torch_dtype: str = "auto",
         quantization_bits: Optional[int] = None,
+        max_memory: Optional[Dict[Any, str]] = None,
     ) -> None:
         """Initializes transformers model and tokenizer.
 
@@ -230,11 +231,13 @@ class TransformersInferenceEngine(InferenceEngine):
             device: Target device string ("auto", "cuda", "cpu").
             torch_dtype: Precision string ("auto", "bfloat16", "float16", "float32").
             quantization_bits: Optional quantization bits (4, 8, or None).
+            max_memory: Optional per-device memory limits for accelerate/transformers.
         """
         self.model_id_or_path = model_id_or_path
         self.device = device
         self.torch_dtype = torch_dtype
         self.quantization_bits = quantization_bits
+        self.max_memory = max_memory
         self._model: Any = None
         self._tokenizer: Any = None
         self._is_initialized = False
@@ -263,6 +266,9 @@ class TransformersInferenceEngine(InferenceEngine):
             "trust_remote_code": True,
             "device_map": self.device,
         }
+
+        if self.max_memory is not None:
+            load_kwargs["max_memory"] = self.max_memory
 
         if self.torch_dtype == "bfloat16":
             load_kwargs["torch_dtype"] = torch.bfloat16
