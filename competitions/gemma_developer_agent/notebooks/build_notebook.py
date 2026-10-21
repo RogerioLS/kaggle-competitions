@@ -525,7 +525,8 @@ harness = LocalSWEHarness(base_dir=Path("/kaggle/working/artifacts/benchmarks"))
 print("DeclarativeAgentRunner and LocalSWEHarness successfully initialized.")
 """
 
-CELL_4_SINGLE_INSTANCE = """# Cell 4: Single Instance Interactive Run with Live Telemetry
+CELL_4_SINGLE_INSTANCE = r"""# Cell 4: Single Instance Interactive Run with Live Telemetry
+import re
 from IPython.display import HTML, display
 
 from competitions.gemma_developer_agent.agent.react_orchestrator import (
@@ -538,6 +539,44 @@ from competitions.gemma_developer_agent.telemetry import (
     RichTelemetryVisualizer,
     TurnTelemetry,
 )
+
+# Resilient fallback for lexical code search in case embeddings are None
+def _resilient_search_similar_code(self, query: str, k: int = 10):
+    if getattr(self, "code_embeddings", None):
+        return self.code_embeddings.search_similar(query, k=k)
+    if getattr(self, "sandbox", None) and self.sandbox.workspace_dir.is_dir():
+        matches = []
+        tokens = [t.lower() for t in re.split(r"\W+", query) if len(t) >= 2]
+        if not tokens:
+            tokens = [query.lower()]
+        for fpath in sorted(self.sandbox.workspace_dir.rglob("*.py")):
+            if ".git" in fpath.parts or "__pycache__" in fpath.parts:
+                continue
+            rel_path = str(fpath.relative_to(self.sandbox.workspace_dir))
+            try:
+                lines = fpath.read_text(encoding="utf-8", errors="ignore").splitlines()
+                for line_idx, line in enumerate(lines, 1):
+                    lower_line = line.lower()
+                    match_count = sum(1 for tok in tokens if tok in lower_line)
+                    if match_count > 0:
+                        matches.append({
+                            "file": rel_path,
+                            "line": line_idx,
+                            "content": line.strip()[:160],
+                            "score": round(float(match_count) / len(tokens), 2),
+                        })
+            except Exception:
+                continue
+        matches.sort(key=lambda x: x["score"], reverse=True)
+        return matches[:k]
+    return []
+
+runner.__class__._tool_search_similar_code = _resilient_search_similar_code
+
+# Allow run_command in explorer permissions so bash tool calls do not fail
+if hasattr(runner, "sub_agents") and "explorer" in runner.sub_agents:
+    if "run_command" not in runner.sub_agents["explorer"].allowed_tools:
+        runner.sub_agents["explorer"].allowed_tools.append("run_command")
 
 sample_instance = next(
     (inst for inst in instances if "requests" in inst.repo.lower()),
