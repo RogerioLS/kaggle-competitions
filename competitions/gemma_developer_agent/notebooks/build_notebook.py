@@ -549,19 +549,38 @@ print(f"Target Repository  : {sample_instance.repo}")
 print(f"Problem Statement  :\\n{sample_instance.problem_statement}")
 print("=" * 70)
 
-# Isolated baseline workspace files
-sample_base_files = {
-    "requests/models.py": (
-        "def handle_redirect(status_code, allow_redirects=True):\\n"
-        "    if not allow_redirects:\\n"
-        "        pass\\n"
-        "    return status_code\\n"
-    ),
-    "tests/test_requests.py": (
-        "def test_redirect():\\n"
-        "    assert True\\n"
-    ),
-}
+# Isolated baseline workspace files aligned with target instance
+if (
+    "supportsread" in sample_instance.problem_statement.lower()
+    or "7505" in sample_instance.instance_id
+):
+    sample_base_files = {
+        "requests/models.py": (
+            "class SupportsRead:\\n"
+            "    pass\\n\\n"
+            "def is_stream(data):\\n"
+            "    if isinstance(data, SupportsRead):\\n"
+            "        return True\\n"
+            "    return False\\n"
+        ),
+        "tests/test_requests.py": (
+            "def test_stream_detection():\\n"
+            "    assert True\\n"
+        ),
+    }
+else:
+    sample_base_files = {
+        "requests/models.py": (
+            "def handle_redirect(status_code, allow_redirects=True):\\n"
+            "    if not allow_redirects:\\n"
+            "        pass\\n"
+            "    return status_code\\n"
+        ),
+        "tests/test_requests.py": (
+            "def test_redirect():\\n"
+            "    assert True\\n"
+        ),
+    }
 
 # Execute ReAct closed-loop orchestrator inside sandbox
 with SubprocessSandbox() as sandbox:
@@ -569,8 +588,8 @@ with SubprocessSandbox() as sandbox:
     orchestrator = ReActOrchestrator(
         runner=runner,
         inference_engine=inference_engine,
-        max_turns=6,
-        timeout_seconds=120,
+        max_turns=8,
+        timeout_seconds=360,
     )
     session = orchestrator.solve(
         instance=sample_instance,
