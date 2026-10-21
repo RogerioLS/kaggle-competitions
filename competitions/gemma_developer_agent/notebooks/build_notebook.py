@@ -139,8 +139,26 @@ if wheelhouse_dir:
                 except OSError:
                     shutil.copyfile(w, target)
 
-        wheels = sorted(str(w) for w in tmp_whl.glob("*.whl"))
-        if wheels:
+        import importlib
+
+        # Install target packages offline via find-links (pip automatically skips incompatible ABIs)
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "-q",
+                "--no-index",
+                f"--find-links={tmp_whl}",
+                "compressed-tensors",
+                "loguru",
+            ],
+            check=False,
+        )
+
+        # Direct fallback for pure-python compressed_tensors wheel
+        for ct_whl in sorted(tmp_whl.glob("*compressed*tensors*.whl")):
             subprocess.run(
                 [
                     sys.executable,
@@ -149,12 +167,13 @@ if wheelhouse_dir:
                     "install",
                     "-q",
                     "--no-deps",
-                    "--force-reinstall",
-                    *wheels,
+                    str(ct_whl),
                 ],
                 check=False,
             )
-            print(f"Successfully installed {len(wheels)} offline wheels.")
+
+        importlib.invalidate_caches()
+        print("Offline wheelhouse installation finished.")
 
 # Configure import paths for Kaggle or local environments
 # Ensure /kaggle/input itself is never in sys.path (it shadows competitions package)
