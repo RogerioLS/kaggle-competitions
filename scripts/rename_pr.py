@@ -8,6 +8,8 @@ Example: "✨ feat(agent): [TASK-04:#9] ... | ✅ Audit 100% | 🧪 29/29 Tests 
 import argparse
 import json
 import os
+import re
+import ssl
 import subprocess
 import sys
 import urllib.request
@@ -19,6 +21,9 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 METRICS_PATH = BASE_DIR / "artifacts" / "audit_summary.json"
+MERGE_SHA_PATTERN = re.compile(
+    r"^Merge\s+([0-9a-f]{7,40})\s+into\s+([0-9a-f]{7,40})", re.IGNORECASE
+)
 
 
 def get_token_and_repo() -> Tuple[Optional[str], Optional[str]]:
@@ -45,24 +50,95 @@ def get_token_and_repo() -> Tuple[Optional[str], Optional[str]]:
     return token, repo
 
 
-def get_clean_title(raw_title: str) -> str:
+def get_clean_title(
+    raw_title: str,
+    head_sha: Optional[str] = None,
+    repo: Optional[str] = None,
+    token: Optional[str] = None,
+    ctx: Optional[ssl.SSLContext] = None,
+) -> str:
     """Removes existing status suffixes and recovers untruncated commit subject."""
     clean = raw_title.split(" | ")[0].strip()
 
-    # If title was truncated (e.g. ends with '…' or '...'), recover from git log
-    if clean.endswith(("…", "...")):
-        try:
-            git_log = subprocess.run(
-                ["git", "--no-pager", "log", "-n", "1", "--pretty=format:%s"],
-                cwd=str(BASE_DIR),
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if git_log.stdout.strip():
-                clean = git_log.stdout.strip()
-        except Exception:
-            pass
+    is_truncated = clean.endswith(("…", "..."))
+    merge_match = MERGE_SHA_PATTERN.match(clean)
+
+    if is_truncated or merge_match:
+        target_sha = head_sha or (merge_match.group(1) if merge_match else None)
+        recovered: Optional[str] = None
+
+        # 1. Try querying git log for target_sha directly
+        if target_sha:
+            try:
+                git_log = subprocess.run(
+                    ["git", "--no-pager", "log", "-n", "1", target_sha, "--pretty=format:%s"],
+                    cwd=str(BASE_DIR),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                candidate = git_log.stdout.strip()
+                if candidate and not MERGE_SHA_PATTERN.match(candidate):
+                    recovered = candidate
+            except Exception:
+                pass
+
+        # 2. Try querying GitHub API for target_sha if git log is shallow/unavailable
+        if not recovered and target_sha and repo and token:
+            try:
+                commit_url = f"https://api.github.com/repos/{repo}/commits/{target_sha}"
+                req = urllib.request.Request(
+                    commit_url,
+                    headers={
+                        "Authorization": f"token {token}",
+                        "Accept": "application/vnd.github+json",
+                        "User-Agent": "Kaggle-Competitions-PR-Renamer",
+                    },
+                )
+                req_ctx = ctx or ssl._create_unverified_context()
+                with urllib.request.urlopen(req, context=req_ctx) as resp:
+                    if resp.status == 200:
+                        commit_data = json.loads(resp.read().decode("utf-8"))
+                        msg = commit_data.get("commit", {}).get("message", "").splitlines()
+                        if msg and not MERGE_SHA_PATTERN.match(msg[0]):
+                            recovered = msg[0].strip()
+            except Exception:
+                pass
+
+        # 3. Try HEAD^2 (in GitHub Actions PR merge checkout, HEAD^2 is the head commit)
+        if not recovered:
+            try:
+                git_log = subprocess.run(
+                    ["git", "--no-pager", "log", "-n", "1", "HEAD^2", "--pretty=format:%s"],
+                    cwd=str(BASE_DIR),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                candidate = git_log.stdout.strip()
+                if candidate and not MERGE_SHA_PATTERN.match(candidate):
+                    recovered = candidate
+            except Exception:
+                pass
+
+        # 4. Try HEAD only if it is not a merge commit
+        if not recovered:
+            try:
+                git_log = subprocess.run(
+                    ["git", "--no-pager", "log", "-n", "1", "--pretty=format:%s"],
+                    cwd=str(BASE_DIR),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                candidate = git_log.stdout.strip()
+                if candidate and not MERGE_SHA_PATTERN.match(candidate):
+                    recovered = candidate
+            except Exception:
+                pass
+
+        if recovered:
+            clean = recovered
 
     return clean
 
@@ -97,6 +173,11 @@ def main() -> None:
 
     pr_number = args.pr
     raw_title = ""
+    head_sha: Optional[str] = None
+
+    import ssl
+
+    ctx = ssl._create_unverified_context()
 
     # Check GITHUB_EVENT_PATH
     event_path = os.getenv("GITHUB_EVENT_PATH")
@@ -106,10 +187,7 @@ def main() -> None:
         if "pull_request" in event_data:
             pr_number = event_data["pull_request"]["number"]
             raw_title = event_data["pull_request"]["title"]
-
-    import ssl
-
-    ctx = ssl._create_unverified_context()
+            head_sha = event_data["pull_request"].get("head", {}).get("sha")
 
     # If PR number given or discovered, fetch title if empty
     if pr_number and not raw_title:
@@ -126,6 +204,7 @@ def main() -> None:
             with urllib.request.urlopen(req, context=ctx) as resp:
                 pr_data = json.loads(resp.read().decode("utf-8"))
                 raw_title = pr_data.get("title", "")
+                head_sha = pr_data.get("head", {}).get("sha")
         except Exception as e:
             print(f"⚠️ Error fetching PR #{pr_number} from API: {e}")
             return
@@ -151,6 +230,7 @@ def main() -> None:
                     if prs:
                         pr_number = prs[0]["number"]
                         raw_title = prs[0].get("title", "")
+                        head_sha = prs[0].get("head", {}).get("sha")
         except Exception:
             pass
 
@@ -158,7 +238,13 @@ def main() -> None:
         print("ℹ️ No active pull request found to rename.")
         return
 
-    clean_title = get_clean_title(raw_title)
+    clean_title = get_clean_title(
+        raw_title=raw_title,
+        head_sha=head_sha,
+        repo=repo,
+        token=token,
+        ctx=ctx,
+    )
     new_title = f"{clean_title} | {status_tag}"
 
     if new_title == raw_title:
