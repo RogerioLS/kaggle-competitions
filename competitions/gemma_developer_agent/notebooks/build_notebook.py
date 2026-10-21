@@ -79,13 +79,82 @@ sub-agents:
 - **Cell 7**: Export Submission (Generates `predictions.jsonl`, `submission.csv`, and zip package).
 """
 
-CELL_1_SETUP_GPU = """# Cell 1: Environment & GPU Check
+CELL_1_SETUP_GPU = """# Cell 1: Environment, Offline Wheelhouse & GPU Check
 from __future__ import annotations
 
 import os
 import platform
+import shutil
+import subprocess
 import sys
 from pathlib import Path
+
+# 0. Configure runtime environment flags before CUDA initialization
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
+# 1. Discover and install offline wheelhouse packages if running air-gapped on Kaggle
+WHEELHOUSE_CANDIDATES = [
+    Path("/kaggle/input/datasets/metric/gemma-4-developer-agent-wheelhouse"),
+    Path("/kaggle/input/gemma-4-developer-agent-wheelhouse"),
+]
+
+wheelhouse_dir = None
+for cand in WHEELHOUSE_CANDIDATES:
+    if cand.is_dir():
+        wheelhouse_dir = cand.resolve()
+        break
+
+if not wheelhouse_dir and Path("/kaggle/input").is_dir():
+    for cand in sorted(Path("/kaggle/input").glob("*wheelhouse*")):
+        if cand.is_dir():
+            wheelhouse_dir = cand.resolve()
+            break
+    if not wheelhouse_dir:
+        for cand in sorted(Path("/kaggle/input").glob("**/*wheelhouse*")):
+            if cand.is_dir():
+                wheelhouse_dir = cand.resolve()
+                break
+
+if wheelhouse_dir:
+    print(f"Discovered offline wheelhouse: {wheelhouse_dir}")
+    try:
+        import compressed_tensors  # noqa: F401
+    except ImportError:
+        print("Installing offline wheels from wheelhouse...")
+        tmp_whl = Path("/tmp/wheelhouse")
+        tmp_whl.mkdir(parents=True, exist_ok=True)
+        for w in wheelhouse_dir.glob("*.whl"):
+            if "cutlass" in w.name.lower():
+                continue
+            target_name = (
+                w.name.replace("cu128", "+cu128")
+                if ("cu128" in w.name and "+" not in w.name)
+                else w.name
+            )
+            target = tmp_whl / target_name
+            if not target.exists():
+                try:
+                    os.symlink(w, target)
+                except OSError:
+                    shutil.copyfile(w, target)
+
+        wheels = sorted(str(w) for w in tmp_whl.glob("*.whl"))
+        if wheels:
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "-q",
+                    "--no-deps",
+                    "--force-reinstall",
+                    *wheels,
+                ],
+                check=False,
+            )
+            print(f"Successfully installed {len(wheels)} offline wheels.")
 
 # Configure import paths for Kaggle or local environments
 # Ensure /kaggle/input itself is never in sys.path (it shadows competitions package)
@@ -138,6 +207,11 @@ print("=" * 70)
 print(f"System Platform   : {platform.platform()}")
 print(f"Python Version    : {platform.python_version()}")
 print(f"PyTorch Version   : {torch.__version__}")
+try:
+    import compressed_tensors
+    print(f"CompressedTensors : {compressed_tensors.__version__}")
+except ImportError:
+    print("CompressedTensors : Not available")
 cuda_available = torch.cuda.is_available()
 print(f"CUDA Available    : {cuda_available}")
 
@@ -354,11 +428,22 @@ inference_engine: InferenceEngine
 if not USE_MOCK_ENGINE and torch.cuda.is_available() and model_path is not None:
     try:
         print(f"Initializing TransformersInferenceEngine with weights from: {model_path}")
+        num_gpus = torch.cuda.device_count()
+        max_mem = None
+        if num_gpus > 1:
+            # Leave 3-4 GiB free on each GPU for KV cache and decompression
+            max_mem = {}
+            for i in range(num_gpus):
+                total_gb = torch.cuda.get_device_properties(i).total_memory / (1024 ** 3)
+                max_mem[i] = f"{max(int(total_gb - 3), 10)}GiB"
+            max_mem["cpu"] = "40GiB"
+
         engine = TransformersInferenceEngine(
             model_id_or_path=str(model_path),
             device="auto",
             torch_dtype="auto",
             quantization_bits=None,
+            max_memory=max_mem,
         )
         engine._ensure_loaded()
         inference_engine = engine
