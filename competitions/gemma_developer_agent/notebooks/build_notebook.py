@@ -935,6 +935,15 @@ from competitions.gemma_developer_agent.submission.validator import (
 output_dir = Path("artifacts")
 output_dir.mkdir(parents=True, exist_ok=True)
 
+# Merge resolved patch from Cell 4 if available
+if "session" in locals() and session.patch:
+    if "sessions" in locals():
+        for i, sess in enumerate(sessions):
+            if sess.instance_id == session.instance_id and not sess.patch:
+                sessions[i] = session
+    else:
+        sessions = [session]
+
 # 1. Export predictions.jsonl
 predictions_path = output_dir / "predictions.jsonl"
 with open(predictions_path, "w", encoding="utf-8") as f:
