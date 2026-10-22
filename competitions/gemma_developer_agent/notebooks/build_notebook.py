@@ -586,29 +586,34 @@ def _resilient_search_similar_code(query: str = "", k: int = 10, **kwargs):
 
 runner._tools["search_similar_code"] = _resilient_search_similar_code
 
-# 2. Resilient tool argument wrappers to prevent parameter mismatches
-orig_read_file = runner._tools["read_file"]
-def _resilient_read_file(**kwargs):
+# 2. Resilient tool argument wrappers bound directly to instance methods (no recursion)
+def _safe_read_file(**kwargs):
     fp = kwargs.get("filepath") or kwargs.get("path") or kwargs.get("file")
     s = kwargs.get("start_line")
     e = kwargs.get("end_line")
-    return orig_read_file(filepath=fp, start_line=s, end_line=e)
-runner._tools["read_file"] = _resilient_read_file
+    return runner._tool_read_file(filepath=fp, start_line=s, end_line=e)
 
-orig_edit_file = runner._tools["edit_file"]
-def _resilient_edit_file(**kwargs):
+runner._tools["read_file"] = _safe_read_file
+
+def _safe_edit_file(**kwargs):
     fp = kwargs.get("filepath") or kwargs.get("path") or kwargs.get("file")
     old_s = kwargs.get("old_string") or kwargs.get("old_str") or kwargs.get("target") or ""
     new_s = kwargs.get("new_string") or kwargs.get("new_str") or kwargs.get("replacement") or ""
     allow_m = kwargs.get("allow_multiple", False)
-    return orig_edit_file(filepath=fp, old_string=old_s, new_string=new_s, allow_multiple=allow_m)
-runner._tools["edit_file"] = _resilient_edit_file
+    return runner._tool_edit_file(
+        filepath=fp,
+        old_string=old_s,
+        new_string=new_s,
+        allow_multiple=allow_m,
+    )
 
-orig_run_command = runner._tools["run_command"]
-def _resilient_run_command(**kwargs):
+runner._tools["edit_file"] = _safe_edit_file
+
+def _safe_run_command(**kwargs):
     cmd = kwargs.get("command") or kwargs.get("cmd") or ""
-    return orig_run_command(command=cmd)
-runner._tools["run_command"] = _resilient_run_command
+    return runner._tool_run_command(command=cmd)
+
+runner._tools["run_command"] = _safe_run_command
 
 # 3. Authorize all tools across all sub-agents so no permission denied error occurs
 all_tools = list(runner._tools.keys())
