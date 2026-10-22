@@ -380,3 +380,16 @@ class TestDeclarativeAgentBenchmarking:
         assert summary.total_instances == 2
         # task-2 has patch applied and resolved
         assert summary.resolved_count >= 1
+
+    def test_tool_search_similar_code_lexical_fallback(
+        self, default_agent_config: AgentConfig
+    ) -> None:
+        """Verifies lexical keyword fallback when embeddings are None."""
+        runner = DeclarativeAgentRunner(config=default_agent_config)
+        with SubprocessSandbox() as sandbox:
+            sandbox.write_file("foo.py", "class SupportsRead:\n    pass\n")
+            runner.sandbox = sandbox
+            results = runner._tool_search_similar_code("SupportsRead")
+            assert len(results) >= 1
+            assert results[0]["file"] == "foo.py"
+            assert "SupportsRead" in results[0]["content"]

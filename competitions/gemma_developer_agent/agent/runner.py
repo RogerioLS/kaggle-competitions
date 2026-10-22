@@ -7,6 +7,7 @@ turn budgets, timeout guardrails, and tool authorization permissions.
 
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -417,6 +418,38 @@ class DeclarativeAgentRunner:
     def _tool_search_similar_code(self, query: str, k: int = 10) -> List[Dict[str, Any]]:
         if self.code_embeddings:
             return self.code_embeddings.search_similar(query, k=k)
+
+        # Resilient lexical keyword fallback across sandbox workspace files
+        if self.sandbox and self.sandbox.workspace_dir.is_dir():
+            matches: List[Dict[str, Any]] = []
+            tokens = [t.lower() for t in re.split(r"\W+", query) if len(t) >= 2]
+            if not tokens:
+                tokens = [query.lower()]
+
+            for fpath in sorted(self.sandbox.workspace_dir.rglob("*.py")):
+                if ".git" in fpath.parts or "__pycache__" in fpath.parts:
+                    continue
+                rel_path = str(fpath.relative_to(self.sandbox.workspace_dir))
+                try:
+                    lines = fpath.read_text(encoding="utf-8", errors="ignore").splitlines()
+                    for line_idx, line in enumerate(lines, 1):
+                        lower_line = line.lower()
+                        match_count = sum(1 for tok in tokens if tok in lower_line)
+                        if match_count > 0:
+                            matches.append(
+                                {
+                                    "file": rel_path,
+                                    "line": line_idx,
+                                    "content": line.strip()[:160],
+                                    "score": round(float(match_count) / len(tokens), 2),
+                                }
+                            )
+                except Exception:
+                    continue
+
+            matches.sort(key=lambda x: x["score"], reverse=True)
+            return matches[:k]
+
         return []
 
     def _tool_get_code_neighbors(

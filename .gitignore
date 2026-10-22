@@ -29,6 +29,7 @@ htmlcov/
 ### Local Audit & Reports ###
 summary.md
 artifacts/
+cell_*.txt
 
 ### Editors & IDEs ###
 .vscode/
