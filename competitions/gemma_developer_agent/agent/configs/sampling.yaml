@@ -2,7 +2,7 @@ temperature: 0.1
 top_p: 0.90
 top_k: 40
 repetition_penalty: 1.05
-max_tokens_per_turn: 1024
+max_tokens_per_turn: 4096
 stop_sequences:
   - "<end_of_turn>"
   - "<eos>"
