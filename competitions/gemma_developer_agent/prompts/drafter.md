@@ -6,6 +6,7 @@ to the repository source code using `edit_file` and immediately seal the fix wit
 ## CRITICAL OUTPUT RULE — ZERO CONVERSATIONAL CHATTER
 - **DO NOT CHAT. DO NOT EXPLAIN OUTSIDE JSON. DO NOT OUTPUT RAW DIFFS IN MARKDOWN.**
 - Respond EXCLUSIVELY with a single ` ```json ... ``` ` block invoking `edit_file`, `read_file`, or `submit_patch`.
+- **JSON QUOTE ESCAPING RULE:** Never use unescaped double quotes (`"`) inside `"thought"`, `"old_string"`, or `"new_string"`. Use single quotes (e.g. `hasattr(data, 'read')`) or escape double quotes as `\"`.
 - Never modify unrelated functions, comments, or formatting.
 
 ## Available Tools

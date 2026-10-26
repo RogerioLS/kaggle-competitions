@@ -68,6 +68,128 @@ class ReActParser:
         "submit_patch": "validator",
     }
 
+    @staticmethod
+    def _unescape_json_fragment(val: str) -> str:
+        """Unescapes common JSON string escape sequences in regex-extracted values."""
+        return (
+            val.replace('\\"', '"')
+            .replace("\\n", "\n")
+            .replace("\\r", "\r")
+            .replace("\\t", "\t")
+            .replace("\\\\", "\\")
+        )
+
+    @classmethod
+    def _fallback_regex_extract(cls, candidate: str) -> Optional[Dict[str, Any]]:
+        """Extracts ReAct fields via key boundaries when unescaped quotes break json.loads."""
+        tool_m = re.search(r'"(?:tool|action)"\s*:\s*"([^"]+)"', candidate)
+        if not tool_m:
+            return None
+        tool = tool_m.group(1).strip()
+
+        sa_m = re.search(r'"sub_agent"\s*:\s*"([^"]+)"', candidate)
+        sub_agent = (
+            sa_m.group(1).strip() if sa_m else cls.DEFAULT_TOOL_SUBAGENT_MAP.get(tool, "locator")
+        )
+
+        thought_m = re.search(
+            r'"thought"\s*:\s*"(.*?)"\s*,\s*"(?:sub_agent|tool|action|arguments)"',
+            candidate,
+            re.DOTALL,
+        )
+        thought = cls._unescape_json_fragment(thought_m.group(1).strip()) if thought_m else ""
+
+        args: Dict[str, Any] = {}
+        fp_m = re.search(r'"(?:filepath|path|file)"\s*:\s*"([^"]+)"', candidate)
+        if fp_m:
+            args["filepath"] = fp_m.group(1).strip()
+
+        if tool == "edit_file":
+            edit_m = re.search(
+                r'"(?:old_string|old_str|target)"\s*:\s*"(.*?)"\s*,\s*'
+                r'"(?:new_string|new_str|replacement)"\s*:\s*"(.*?)"\s*'
+                r'(?:,\s*"allow_multiple"\s*:\s*(true|false))?\s*\}',
+                candidate,
+                re.DOTALL,
+            )
+            if edit_m:
+                args["old_string"] = cls._unescape_json_fragment(edit_m.group(1))
+                args["new_string"] = cls._unescape_json_fragment(edit_m.group(2))
+                if edit_m.group(3):
+                    args["allow_multiple"] = edit_m.group(3).lower() == "true"
+        elif tool == "read_file":
+            s_m = re.search(r'"start_line"\s*:\s*(\d+)', candidate)
+            e_m = re.search(r'"end_line"\s*:\s*(\d+)', candidate)
+            if s_m:
+                args["start_line"] = int(s_m.group(1))
+            if e_m:
+                args["end_line"] = int(e_m.group(1))
+        elif tool == "run_command":
+            cmd_m = re.search(r'"(?:command|cmd)"\s*:\s*"(.*?)"\s*\}', candidate, re.DOTALL)
+            if cmd_m:
+                args["command"] = cls._unescape_json_fragment(cmd_m.group(1))
+        elif tool == "write_file":
+            content_m = re.search(r'"content"\s*:\s*"(.*?)"\s*\}', candidate, re.DOTALL)
+            if content_m:
+                args["content"] = cls._unescape_json_fragment(content_m.group(1))
+        elif tool == "search_similar_code":
+            q_m = re.search(
+                r'"(?:query|search_query|text)"\s*:\s*"(.*?)"\s*(?:,\s*"k"\s*:\s*(\d+))?\s*\}',
+                candidate,
+                re.DOTALL,
+            )
+            if q_m:
+                args["query"] = cls._unescape_json_fragment(q_m.group(1))
+                if q_m.group(2):
+                    args["k"] = int(q_m.group(2))
+
+        return {
+            "thought": thought,
+            "sub_agent": sub_agent,
+            "tool": tool,
+            "arguments": args,
+        }
+
+    @classmethod
+    def _load_json_resilient(cls, candidate: str) -> Any:
+        """Parses candidate JSON, repairing unescaped inner quotes, raw newlines, and commas."""
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            pass
+
+        cleaned = re.sub(r",\s*([\]}])", r"\1", candidate)
+        current = cleaned
+        last_exc: Optional[json.JSONDecodeError] = None
+
+        for _ in range(40):
+            try:
+                return json.loads(current)
+            except json.JSONDecodeError as exc:
+                last_exc = exc
+                pos = exc.pos
+                if "Invalid control character" in exc.msg and 0 <= pos < len(current):
+                    ch = current[pos]
+                    rep = {"\n": "\\n", "\r": "\\r", "\t": "\\t"}.get(ch, " ")
+                    next_pos = pos + 1
+                    current = current[:pos] + rep + current[next_pos:]
+                    continue
+                if exc.msg.startswith("Expecting ',' delimiter") or exc.msg.startswith(
+                    "Expecting ':' delimiter"
+                ):
+                    q_idx = current.rfind('"', 0, pos)
+                    if q_idx > 0 and current[q_idx - 1] != "\\":
+                        next_q = q_idx + 1
+                        current = current[:q_idx] + '\\"' + current[next_q:]
+                        continue
+                break
+
+        fallback = cls._fallback_regex_extract(cleaned)
+        if fallback is not None:
+            return fallback
+
+        raise ReActParseError(f"Malformed JSON in action block: {last_exc}") from last_exc
+
     @classmethod
     def parse(cls, model_output: str) -> ReActAction:
         """Parses model generation into a ReActAction object.
@@ -98,15 +220,7 @@ class ReActParser:
                 "Ensure your response includes a ```json {...} ``` block."
             )
 
-        try:
-            data = json.loads(candidate)
-        except json.JSONDecodeError as exc:
-            # Attempt to fix common trailing comma errors before failing
-            cleaned = re.sub(r",\s*([\]}])", r"\1", candidate)
-            try:
-                data = json.loads(cleaned)
-            except json.JSONDecodeError:
-                raise ReActParseError(f"Malformed JSON in action block: {exc}") from exc
+        data = cls._load_json_resilient(candidate)
 
         if not isinstance(data, dict):
             raise ReActParseError(f"Action block must be a JSON object, got {type(data).__name__}.")
@@ -318,9 +432,14 @@ class ReActOrchestrator:
                 action = self.parser.parse(raw_completion)
             except ReActParseError as parse_err:
                 logger.warning("Action parse error on turn %d: %s", turn_idx, parse_err)
+                messages[-1] = ChatMessage(
+                    role=MODEL_ROLE, content="[Invalid JSON tool call omitted]"
+                )
                 observation = (
                     f"ActionParseError: {parse_err}\n"
-                    "Please provide a valid JSON action block specifying thought, "
+                    'IMPORTANT: Do NOT use unescaped double quotes (") inside JSON strings '
+                    "(use single quotes '...' inside thought/code, or escape as \\\"). "
+                    "Provide a valid JSON action block specifying thought, "
                     "sub_agent, tool, and arguments."
                 )
                 session.history.append(

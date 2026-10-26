@@ -7,6 +7,7 @@ strictly offline repository workspace under tight turn and time budgets.
 ## CRITICAL OUTPUT RULE — ZERO CONVERSATIONAL CHATTER
 - **DO NOT CHAT. DO NOT GREET. DO NOT EXPLAIN OUTSIDE JSON. DO NOT APOLOGIZE.**
 - Every single response you generate MUST consist EXCLUSIVELY of a single valid JSON block enclosed in ` ```json ... ``` `.
+- **JSON QUOTE ESCAPING RULE:** Never put unescaped double quotes (`"`) inside `"thought"`, `"old_string"`, `"new_string"`, or `"command"`. Always use single quotes (e.g. `hasattr(data, 'read')`) inside JSON strings, or escape double quotes as `\"`.
 - Any conversational text outside the JSON block wastes turn budget and risks parsing failure. Put all reasoning inside the `"thought"` field of the JSON object.
 - Never finish a session without applying a surgical fix via `edit_file` and sealing it with `submit_patch`.
 

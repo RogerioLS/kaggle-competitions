@@ -194,6 +194,28 @@ Here is my reasoning: I should read the target module first.
         with pytest.raises(ReActParseError, match="No JSON action block found"):
             ReActParser.parse(output)
 
+    def test_parse_unescaped_inner_quotes_and_newlines(self) -> None:
+        """Repairs unescaped double quotes and literal newlines inside thought/edit_file."""
+        output = (
+            "```json\n"
+            "{\n"
+            '  "thought": "Add or hasattr(data, "read") to requests/models.py",\n'
+            '  "sub_agent": "drafter",\n'
+            '  "tool": "edit_file",\n'
+            '  "arguments": {\n'
+            '    "filepath": "requests/models.py",\n'
+            '    "old_string": "    if isinstance(data, SupportsRead):",\n'
+            '    "new_string": "    if isinstance(data, SupportsRead) or hasattr(data, "read"):"\n'
+            "  }\n"
+            "}\n"
+            "```"
+        )
+        action = ReActParser.parse(output)
+        assert action.tool == "edit_file"
+        assert action.sub_agent == "drafter"
+        assert action.arguments["filepath"] == "requests/models.py"
+        assert 'hasattr(data, "read")' in action.arguments["new_string"]
+
 
 class TestReActOrchestrator:
     """Verifies multi-turn execution, sandbox integration, and closed-loop testing."""
