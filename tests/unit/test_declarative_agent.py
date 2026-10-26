@@ -393,3 +393,26 @@ class TestDeclarativeAgentBenchmarking:
             assert len(results) >= 1
             assert results[0]["file"] == "foo.py"
             assert "SupportsRead" in results[0]["content"]
+
+    def test_prompts_contain_anti_chat_directive_and_valid_few_shot_json(
+        self, default_agent_config: AgentConfig
+    ) -> None:
+        """Verifies all agent prompts enforce anti-chat rules and valid JSON few-shots."""
+        from competitions.gemma_developer_agent.agent.react_orchestrator import (
+            ReActParser,
+        )
+
+        prompts_to_check = {"system": default_agent_config.system_prompt_content}
+        for sa_name, sa_cfg in default_agent_config.sub_agents.items():
+            prompts_to_check[sa_name] = sa_cfg.prompt_content
+
+        for name, content in prompts_to_check.items():
+            assert "DO NOT CHAT" in content, f"Prompt '{name}' missing anti-chat rule"
+            assert "Few-Shot" in content, f"Prompt '{name}' missing few-shot section"
+            matches = ReActParser.JSON_BLOCK_PATTERN.findall(content)
+            assert len(matches) >= 2, f"Prompt '{name}' should have >= 2 JSON blocks"
+            # Verify the concrete few-shot examples parse cleanly
+            for block in matches[-2:]:
+                action = ReActParser.parse(f"```json\n{block}\n```")
+                assert action.tool
+                assert action.sub_agent in {"explorer", "locator", "drafter", "validator"}

@@ -238,11 +238,10 @@ class ReActOrchestrator:
             f"{instance.problem_statement}\n\n"
             f"#### Instructions:\n"
             f"1. Explore and localize the bug using `read_file` or `search_similar_code`.\n"
-            f"2. Write a minimal reproducer script (e.g. `reproducer.py`) with `write_file`.\n"
-            f"3. Run `pytest reproducer.py` via `run_command` to verify the failure.\n"
-            f"4. Edit the codebase surgically using `edit_file` to fix the bug.\n"
-            f"5. Run the reproducer again to confirm it passes.\n"
-            f"6. Call `submit_patch` when finished to generate the final patch."
+            f"2. Edit the codebase surgically using `edit_file` to fix the root cause.\n"
+            f"3. Optionally verify with `run_command` (`pytest`) and clean up any temp files.\n"
+            f"4. Call `submit_patch` immediately once the fix is applied to seal the final patch.\n"
+            f"5. CRITICAL: Respond ONLY with a valid ```json ... ``` tool call block. Do not chat."
         )
 
     def solve(

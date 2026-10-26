@@ -66,7 +66,8 @@ class GemmaPromptFormatter:
             [
                 "",
                 "### Action Output Format",
-                "To invoke a tool, your output MUST contain a single JSON block formatted as:",
+                "CRITICAL RULE: DO NOT CHAT. DO NOT EXPLAIN OUTSIDE JSON. DO NOT GREET.",
+                "To invoke a tool, your output MUST contain exclusively a single JSON block:",
                 "```json",
                 "{",
                 '  "thought": "Step-by-step reasoning explaining why this action is necessary",',
