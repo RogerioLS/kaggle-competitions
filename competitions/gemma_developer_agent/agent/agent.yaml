@@ -7,7 +7,7 @@ system_prompt: "prompts/system.md"
 budget:
   max_turns: 20
   timeout_seconds: 300
-  max_tokens_per_turn: 4096
+  max_tokens_per_turn: 1024
 
 sampling_config: "configs/sampling.yaml"
 
