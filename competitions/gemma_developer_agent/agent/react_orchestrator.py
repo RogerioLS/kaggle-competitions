@@ -238,11 +238,10 @@ class ReActOrchestrator:
             f"{instance.problem_statement}\n\n"
             f"#### Instructions:\n"
             f"1. Explore and localize the bug using `read_file` or `search_similar_code`.\n"
-            f"2. Write a minimal reproducer script (e.g. `reproducer.py`) with `write_file`.\n"
-            f"3. Run `pytest reproducer.py` via `run_command` to verify the failure.\n"
-            f"4. Edit the codebase surgically using `edit_file` to fix the bug.\n"
-            f"5. Run the reproducer again to confirm it passes.\n"
-            f"6. Call `submit_patch` when finished to generate the final patch."
+            f"2. Edit the codebase surgically using `edit_file` to fix the root cause.\n"
+            f"3. Optionally verify with `run_command` (`pytest`) and clean up any temp files.\n"
+            f"4. Call `submit_patch` immediately once the fix is applied to seal the final patch.\n"
+            f"5. CRITICAL: Respond ONLY with a valid ```json ... ``` tool call block. Do not chat."
         )
 
     def solve(
@@ -361,6 +360,16 @@ class ReActOrchestrator:
                 if not turn_record.is_error
                 else f"Error ({action.tool}):\n{turn_record.observation}"
             )
+            if action.tool == "edit_file" and not turn_record.is_error:
+                obs_feedback += (
+                    "\n\n[Next Step: The edit was applied cleanly. Call `submit_patch` "
+                    "in a ```json ... ``` block to finalize the patch.]"
+                )
+            elif turn_idx >= self.max_turns - 2:
+                obs_feedback += (
+                    f"\n\n[URGENT: Only {self.max_turns - turn_idx} turn(s) remaining! "
+                    "Apply `edit_file` or call `submit_patch` immediately.]"
+                )
             messages.append(ChatMessage(role=USER_ROLE, content=obs_feedback))
 
         # Capture final git diff if submit_patch was not explicitly called or returned empty

@@ -393,3 +393,62 @@ class TestDeclarativeAgentBenchmarking:
             assert len(results) >= 1
             assert results[0]["file"] == "foo.py"
             assert "SupportsRead" in results[0]["content"]
+
+    def test_prompts_contain_anti_chat_directive_and_valid_few_shot_json(
+        self, default_agent_config: AgentConfig
+    ) -> None:
+        """Verifies all agent prompts enforce anti-chat rules and valid JSON few-shots."""
+        from competitions.gemma_developer_agent.agent.react_orchestrator import (
+            ReActParser,
+        )
+
+        prompts_to_check = {"system": default_agent_config.system_prompt_content}
+        for sa_name, sa_cfg in default_agent_config.sub_agents.items():
+            prompts_to_check[sa_name] = sa_cfg.prompt_content
+
+        for name, content in prompts_to_check.items():
+            assert "DO NOT CHAT" in content, f"Prompt '{name}' missing anti-chat rule"
+            assert "Few-Shot" in content, f"Prompt '{name}' missing few-shot section"
+            matches = ReActParser.JSON_BLOCK_PATTERN.findall(content)
+            assert len(matches) >= 2, f"Prompt '{name}' should have >= 2 JSON blocks"
+            # Verify the concrete few-shot examples parse cleanly
+            for block in matches[-2:]:
+                action = ReActParser.parse(f"```json\n{block}\n```")
+                assert action.tool
+                assert action.sub_agent in {"explorer", "locator", "drafter", "validator"}
+
+    def test_submit_patch_sanitizes_ephemeral_reproducer_files(
+        self, default_agent_config: AgentConfig
+    ) -> None:
+        """Verifies _tool_submit_patch strips temporary reproducer scripts before git diff."""
+        with SubprocessSandbox() as sandbox:
+            sandbox.write_file("requests/models.py", "def is_stream(x):\n    return False\n")
+            sandbox.commit_all("baseline")
+
+            runner = DeclarativeAgentRunner(config=default_agent_config, sandbox=sandbox)
+            session = AgentSessionResult(instance_id="repro-sanitize-01")
+
+            # Simulate creating a temporary reproducer script and editing source
+            sandbox.write_file("reproducer.py", "import requests\nprint('repro')\n")
+            runner.execute_turn(
+                sub_agent_name="drafter",
+                tool_name="edit_file",
+                arguments={
+                    "filepath": "requests/models.py",
+                    "old_string": "return False",
+                    "new_string": "return True",
+                },
+                session=session,
+            )
+            record = runner.execute_turn(
+                sub_agent_name="drafter",
+                tool_name="submit_patch",
+                arguments={},
+                session=session,
+            )
+
+            assert record.is_error is False
+            assert session.success is True
+            assert "requests/models.py" in session.patch
+            assert "reproducer.py" not in session.patch
+            assert not (sandbox.workspace_dir / "reproducer.py").exists()
