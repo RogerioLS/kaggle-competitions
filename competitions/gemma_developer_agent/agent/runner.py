@@ -217,6 +217,10 @@ class DeclarativeAgentRunner:
         if not session.sub_agent_trace or session.sub_agent_trace[-1] != sub_agent_name:
             session.sub_agent_trace.append(sub_agent_name)
 
+        if tool_name == "submit_patch" and not is_err and not obs.startswith("No changes"):
+            session.patch = obs
+            session.success = bool(obs.strip())
+
         record = TurnRecord(
             turn_index=turn_idx,
             sub_agent=sub_agent_name,
@@ -534,6 +538,11 @@ class DeclarativeAgentRunner:
 
     def _tool_submit_patch(self) -> str:
         if self.sandbox:
+            for temp_name in ("reproducer.py", "reproduce_issue.py", "test_reproduce.py"):
+                temp_file = self.sandbox.workspace_dir / temp_name
+                if temp_file.is_file():
+                    self.sandbox.execute(["git", "rm", "-f", "--cached", temp_name])
+                    temp_file.unlink(missing_ok=True)
             diff = self.sandbox.get_diff()
             return diff
         return ""

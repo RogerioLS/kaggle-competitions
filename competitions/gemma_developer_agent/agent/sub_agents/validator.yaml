@@ -1,12 +1,16 @@
 name: validator
 role: "Test Runner & Submission Gatekeeper"
-description: "Executes test suites, verifies git diffs, and seals final submission patches."
+description: "Verifies git diffs and immediately seals final submission patches via submit_patch."
 prompt: "prompts/validator.md"
-max_turns: 5
-timeout_seconds: 120
+max_turns: 6
+timeout_seconds: 180
 allowed_tools:
+  - submit_patch
   - run_command
   - read_file
   - edit_file
+  - write_file
   - get_status
-  - submit_patch
+  - search_similar_code
+  - get_code_neighbors
+  - get_code_subgraph

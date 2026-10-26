@@ -360,6 +360,16 @@ class ReActOrchestrator:
                 if not turn_record.is_error
                 else f"Error ({action.tool}):\n{turn_record.observation}"
             )
+            if action.tool == "edit_file" and not turn_record.is_error:
+                obs_feedback += (
+                    "\n\n[Next Step: The edit was applied cleanly. Call `submit_patch` "
+                    "in a ```json ... ``` block to finalize the patch.]"
+                )
+            elif turn_idx >= self.max_turns - 2:
+                obs_feedback += (
+                    f"\n\n[URGENT: Only {self.max_turns - turn_idx} turn(s) remaining! "
+                    "Apply `edit_file` or call `submit_patch` immediately.]"
+                )
             messages.append(ChatMessage(role=USER_ROLE, content=obs_feedback))
 
         # Capture final git diff if submit_patch was not explicitly called or returned empty
