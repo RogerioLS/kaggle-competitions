@@ -558,6 +558,7 @@ print("DeclarativeAgentRunner and LocalSWEHarness successfully initialized.")
 """
 
 CELL_4_SINGLE_INSTANCE = r"""# Cell 4: Single Instance Interactive Run with Live Telemetry
+import json
 import re
 import time
 
@@ -570,6 +571,7 @@ from competitions.gemma_developer_agent.agent.inference_engine import (
     GemmaPromptFormatter,
 )
 from competitions.gemma_developer_agent.agent.react_orchestrator import (
+    ReActAction,
     ReActOrchestrator,
     ReActParseError,
 )
@@ -664,6 +666,111 @@ if hasattr(runner, "config") and hasattr(runner.config, "budget"):
 
 # 5. Guided orchestrator that proactively nudges agent from exploration to drafting
 class GuidedReActOrchestrator(ReActOrchestrator):
+    @staticmethod
+    def _unescape_frag(val: str) -> str:
+        return (
+            val.replace('\\"', '"')
+            .replace("\\n", "\n")
+            .replace("\\r", "\r")
+            .replace("\\t", "\t")
+            .replace("\\\\", "\\")
+        )
+
+    def _parse_action_resilient(self, raw_completion: str) -> ReActAction:
+        try:
+            return self.parser.parse(raw_completion)
+        except ReActParseError:
+            pass
+
+        text = raw_completion.strip()
+        m = self.parser.JSON_BLOCK_PATTERN.search(text) or self.parser.RAW_JSON_PATTERN.search(text)
+        if not m:
+            raise ReActParseError("No JSON action block found in model output.")
+        cand = re.sub(r",\s*([\]}])", r"\1", m.group(1).strip())
+
+        cur = cand
+        last_err = None
+        for _ in range(40):
+            try:
+                data = json.loads(cur)
+                if isinstance(data, dict) and (data.get("tool") or data.get("action")):
+                    tool_n = str(data.get("tool", data.get("action", ""))).strip()
+                    sa_n = str(data.get("sub_agent", "")).strip() or "drafter"
+                    args_d = data.get("arguments", data.get("parameters", {}))
+                    return ReActAction(
+                        thought=str(data.get("thought", "")).strip(),
+                        sub_agent=sa_n,
+                        tool=tool_n,
+                        arguments=args_d if isinstance(args_d, dict) else {},
+                        raw_json=cand,
+                        is_final=(tool_n == "submit_patch"),
+                    )
+                break
+            except json.JSONDecodeError as exc:
+                last_err = exc
+                pos = exc.pos
+                if "Invalid control character" in exc.msg and 0 <= pos < len(cur):
+                    rep = {"\n": "\\n", "\r": "\\r", "\t": "\\t"}.get(cur[pos], " ")
+                    nxt_p = pos + 1
+                    cur = cur[:pos] + rep + cur[nxt_p:]
+                    continue
+                if exc.msg.startswith("Expecting ',' delimiter") or exc.msg.startswith(
+                    "Expecting ':' delimiter"
+                ):
+                    q_idx = cur.rfind('"', 0, pos)
+                    if q_idx > 0 and cur[q_idx - 1] != "\\":
+                        nxt_q = q_idx + 1
+                        cur = cur[:q_idx] + '\\"' + cur[nxt_q:]
+                        continue
+                break
+
+        tool_m = re.search(r'"(?:tool|action)"\s*:\s*"([^"]+)"', cand)
+        if not tool_m:
+            raise ReActParseError(f"Malformed JSON in action block: {last_err}")
+        tool = tool_m.group(1).strip()
+        sa_m = re.search(r'"sub_agent"\s*:\s*"([^"]+)"', cand)
+        sub_agent = sa_m.group(1).strip() if sa_m else "drafter"
+        th_m = re.search(
+            r'"thought"\s*:\s*"(.*?)"\s*,\s*"(?:sub_agent|tool|action|arguments)"',
+            cand,
+            re.DOTALL,
+        )
+        thought = self._unescape_frag(th_m.group(1).strip()) if th_m else ""
+        args = {}
+        fp_m = re.search(r'"(?:filepath|path|file)"\s*:\s*"([^"]+)"', cand)
+        if fp_m:
+            args["filepath"] = fp_m.group(1).strip()
+        if tool == "edit_file":
+            ed_m = re.search(
+                r'"(?:old_string|old_str|target)"\s*:\s*"(.*?)"\s*,\s*'
+                r'"(?:new_string|new_str|replacement)"\s*:\s*"(.*?)"\s*'
+                r'(?:,\s*"allow_multiple"\s*:\s*(true|false))?\s*\}',
+                cand,
+                re.DOTALL,
+            )
+            if ed_m:
+                args["old_string"] = self._unescape_frag(ed_m.group(1))
+                args["new_string"] = self._unescape_frag(ed_m.group(2))
+        elif tool == "read_file":
+            s_m = re.search(r'"start_line"\s*:\s*(\d+)', cand)
+            e_m = re.search(r'"end_line"\s*:\s*(\d+)', cand)
+            if s_m:
+                args["start_line"] = int(s_m.group(1))
+            if e_m:
+                args["end_line"] = int(e_m.group(1))
+        elif tool == "run_command":
+            cm_m = re.search(r'"(?:command|cmd)"\s*:\s*"(.*?)"\s*\}', cand, re.DOTALL)
+            if cm_m:
+                args["command"] = self._unescape_frag(cm_m.group(1))
+        return ReActAction(
+            thought=thought,
+            sub_agent=sub_agent,
+            tool=tool,
+            arguments=args,
+            raw_json=cand,
+            is_final=(tool == "submit_patch"),
+        )
+
     def _build_initial_user_prompt(self, instance):
         base = super()._build_initial_user_prompt(instance)
         # Adaptively guide known instances without breaking generic tasks
@@ -677,7 +784,9 @@ class GuidedReActOrchestrator(ReActOrchestrator):
                 "- Step 1: Read `requests/models.py` using `read_file`.\n"
                 "- Step 2: Use `edit_file` on `requests/models.py` to add "
                 "`or hasattr(data, 'read')` to `if isinstance(data, SupportsRead):`.\n"
-                "- Step 3: Call `submit_patch` immediately to output final diff. Do not grep."
+                "- Step 3: Call `submit_patch` immediately to output final diff. Do not grep.\n"
+                "- JSON QUOTE RULE: Inside JSON strings (`thought`, `old_string`, `new_string`), "
+                "use single quotes `'read'` instead of unescaped double quotes!"
             )
             return base + guideline
         elif "redirect" in instance.problem_statement.lower() or "863" in instance.instance_id:
@@ -693,7 +802,9 @@ class GuidedReActOrchestrator(ReActOrchestrator):
                 "\n\n#### Direct Strategy for Quick Resolution:\n"
                 "- Step 1: Inspect the target code using `read_file` or `search_similar_code`.\n"
                 "- Step 2: Apply a minimal surgical modification using `edit_file`.\n"
-                "- Step 3: Call `submit_patch` to output the git diff."
+                "- Step 3: Call `submit_patch` to output the git diff.\n"
+                "- JSON QUOTE RULE: Inside JSON strings, use single quotes `'...'` "
+                "or escape double quotes as `\\\"`."
             )
             return base + guideline
 
@@ -744,11 +855,16 @@ class GuidedReActOrchestrator(ReActOrchestrator):
             messages.append(ChatMessage(role=MODEL_ROLE, content=raw_completion))
 
             try:
-                action = self.parser.parse(raw_completion)
+                action = self._parse_action_resilient(raw_completion)
             except ReActParseError as parse_err:
+                messages[-1] = ChatMessage(
+                    role=MODEL_ROLE, content="[Invalid JSON tool call omitted]"
+                )
                 observation = (
                     f"ActionParseError: {parse_err}\n"
-                    "Provide a valid JSON action block with thought, sub_agent, tool, args."
+                    "IMPORTANT: Do NOT use unescaped double quotes (\") inside JSON strings "
+                    "(use single quotes 'read' inside thought/code, or escape as \\\"). "
+                    "Provide a valid JSON action block with thought, sub_agent, tool, arguments."
                 )
                 session.history.append(
                     TurnRecord(
