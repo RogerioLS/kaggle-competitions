@@ -4,6 +4,7 @@ title: "Submission v3.0 Prompt Hardening, Budget Calibration & Resilient JSON Pa
 area: competition/gemma-developer-agent
 type: feature
 milestone: 4
+github_issue: 50
 ---
 
 ## 🎯 Task Objective
