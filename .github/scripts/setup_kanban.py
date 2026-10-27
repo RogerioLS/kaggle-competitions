@@ -235,6 +235,16 @@ def setup_tasks(token: str, milestone_map: Dict[str, int]) -> None:
             "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
             "labels": ["area: harness", "area: competition", "type: feature", "priority: high"],
         },
+        {
+            "id": "TASK-11",
+            "title": (
+                "[TASK-11] Submission v3.0 Prompt Hardening, Budget Calibration "
+                "& Resilient JSON Parser"
+            ),
+            "file": "task-11-prompt-hardening-and-resilient-parser.md",
+            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
+            "labels": ["area: agent", "area: submission", "type: feature", "priority: high"],
+        },
     ]
 
     for task in task_definitions:
