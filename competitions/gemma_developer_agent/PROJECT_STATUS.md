@@ -1,9 +1,9 @@
 # 📋 Status Geral do Projeto e Guia de Retomada (Handoff)
 
-> **Data de Atualização:** 23 de Outubro de 2026  
+> **Data de Atualização:** 27 de Outubro de 2026  
 > **Repositório:** `RogerioLS/kaggle-competitions`  
 > **Branch Atual:** `main` (100% atualizada e sincronizada com `origin/main`)  
-> **Status de Qualidade:** 🟢 120/120 Testes Unitários Passando | Clean Chassis Compliant  
+> **Status de Qualidade:** 🟢 123/123 Testes Unitários Passando | Clean Chassis Compliant  
 
 ---
 
@@ -30,6 +30,7 @@ Todas as **10 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 | **[TASK-10.5]** | Namespace Isolation & Cache Eviction (`competitions`) | - | PR [#33](https://github.com/RogerioLS/kaggle-competitions/pull/33) | 🟢 `main` |
 | **[TASK-10.6]** | Test Patch Toggle & Fallback for Demo Workspaces | - | PR [#34](https://github.com/RogerioLS/kaggle-competitions/pull/34) | 🟢 `main` |
 | **[TASK-10.7]** | Kaggle Offline Resilience & Hidden Dataset Sync | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | PR [#43](https://github.com/RogerioLS/kaggle-competitions/pull/43) | 🟢 `main` |
+| **[TASK-10.8]** | Prompt Hardening, Budget Calibration, Diff Sanitizer & Resilient JSON Parser | [#9](https://github.com/RogerioLS/kaggle-competitions/issues/9) | PR [#46](https://github.com/RogerioLS/kaggle-competitions/pull/46), [#47](https://github.com/RogerioLS/kaggle-competitions/pull/47), [#48](https://github.com/RogerioLS/kaggle-competitions/pull/48) | 🟢 `main` |
 
 ---
 
@@ -56,7 +57,28 @@ Todas as **10 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
   1. **Comportamento Conversacional do Modelo Base:** O modelo Gemma 4 31B IT padrão é treinado para conversação. Sem restrições imperativas de "Zero Conversational Chatter" e sem exemplos Few-Shot nos prompts (`prompts/*.md`), o modelo respondeu com preâmbulos e explicações em linguagem natural em vez de emitir imediatamente o JSON puro da ferramenta.
   2. **Esgotamento do Turn Budget:** Com `max_turns: 5` por sub-agente, os turnos foram consumidos pelo diálogo explicativo antes que os sub-agentes `drafter` e `validator` pudessem invocar efetivamente a ferramenta `edit_file` e o selamento com `submit_patch()`.
   3. **Geração de Patches Vazios:** Como nenhuma alteração foi persistida no repositório, o `git diff HEAD` capturado pela sandbox ao final de cada instância foi vazio (`""`). Em suítes de teste de SWE-bench, patches vazios não corrigem o bug e resultam em falha de todos os testes unitários (`Pass@1 = 0.00`).
-  4. **Ausência de Adaptadores LoRA:** O pacote submetido continha apenas a arquitetura base sem pesos de fine-tuning (`adapters/`) especializados nas tarefas de modificação cirúrgica de código.
+  4. **Poluição do `git diff` por `reproducer.py`:** Na instância `requests_7502`, o sub-agente seguiu a instrução antiga de criar um script `reproducer.py` no disco sem removê-lo, gerando um `diff --git a/reproducer.py` inválido em vez do patch cirúrgico em `requests/models.py`.
+  5. **Gargalo no `validator.md` + `validator.yaml`:** O prompt antigo exigia 5 passos (incluindo `pytest tests/` no repositório inteiro) antes de chamar `submit_patch` no Passo 6, estourando o limite de `max_turns: 5` e `timeout_seconds: 120` antes da submissão.
+
+---
+
+### Submissão v3.0 (27/10/2026) — Em Avaliação no Kaggle
+* **Status no Notebook GPU (4x NVIDIA L4):** 🟢 `100.0% Pass@1` no Benchmark em Lote (`2/2 RESOLVED`: `requests_7505` em 3 turnos / `132.39s` e `requests_7502` em 3 turnos / `142.23s`).
+* **Pacote Gerado (`submission.zip`):** `11,089 bytes` comprimido (`18,880 bytes` descomprimido), 13 arquivos declarativos validados (`SHA256: 4afb16ce6aeea090...`, `100% Compliant`).
+* **Melhorias Estruturais Implementadas (PRs [#46](https://github.com/RogerioLS/kaggle-competitions/pull/46), [#47](https://github.com/RogerioLS/kaggle-competitions/pull/47), [#48](https://github.com/RogerioLS/kaggle-competitions/pull/48)):**
+  1. **Blindagem Anti-Chat + Exemplos Few-Shot JSON (`prompts/*.md`):** Todos os 5 prompts (`system`, `explorer`, `locator`, `drafter`, `validator`) agora incluem a regra `CRITICAL OUTPUT RULE — ZERO CONVERSATIONAL CHATTER`, `JSON QUOTE ESCAPING RULE` e 2 exemplos Few-Shot JSON completos por arquivo.
+  2. **Priorização Imediata do `submit_patch` e Calibração de Sub-Agentes (`sub_agents/*.yaml`):**
+     - `submit_patch` liberado em `locator`, `drafter` e `validator` (com instrução para chamar `submit_patch` imediatamente no turno seguinte ao `edit_file`).
+     - Proibição de rodar suítes completas (`pytest tests/`) sem caminho específico que causavam timeout antes da submissão.
+     - Budgets calibrados: `explorer` (`4 turnos / 90s`), `locator` (`6 turnos / 120s`), `drafter` (`8 turnos / 180s`), `validator` (`6 turnos / 180s`).
+  3. **Protocolo Anti-Poluição de `git diff` (`skills/*.md` e `runner.py`):**
+     - Proibição de criação de arquivos temporários (`reproducer.py`, `reproduce_issue.py`, `test_reproduce.py`) nos prompts e skills.
+     - Sanitização automática em `DeclarativeAgentRunner._tool_submit_patch()` (`git rm -f --cached` + `unlink`) antes de capturar `self.sandbox.get_diff()`.
+  4. **Parser JSON Resiliente a Aspas Internas e Quebras de Linha (`react_orchestrator.py` e `build_notebook.py`):**
+     - Quando o modelo emite strings contendo aspas duplas não escapadas (ex.: `hasattr(data, "read")` dentro de `"thought"` ou `"new_string"`) ou quebras de linha literais, `ReActParser._load_json_resilient()` repara automaticamente as aspas na posição exata de `JSONDecodeError.pos` e possui fallback regex estrutural por fronteira de chaves.
+     - Proteção anti-loop: respostas com erro de parse não ficam salvas cruas no histórico `messages`.
+  5. **Decodificação Determinística (`configs/sampling.yaml` e `agent.yaml`):**
+     - `temperature: 0.1`, `top_p: 0.90`, `max_tokens_per_turn: 4096` (preservando espaço completo para `thought` + `edit_file` sem truncar o bloco JSON).
 
 ---
 
@@ -117,18 +139,16 @@ O Leaderboard atual possui a seguinte distribuição de competidores:
 
 Para cruzar a barreira do zero e disputar a zona de medalhas, o plano de ataque está estruturado em 3 fases complementares:
 
-### Fase 1: Blindagem de Prompts com Few-Shot Tool Calling
-- **Diretiva Anti-Chat Mandatória:** Inserir nos prompts (`system.md`, `drafter.md`, `validator.md`) a regra rígida:
-  > *"CRITICAL RULE: DO NOT CHAT. DO NOT EXPLAIN. DO NOT APOLOGIZE. Your output must strictly be a single valid JSON block containing the action and arguments."*
-- **Injeção de Exemplos Few-Shot:** Adicionar 2 exemplos concretos de chamada de ferramenta por prompt:
-  1. Chamada de leitura: `{"action": "read_file", "arguments": {"filepath": "...", "start_line": 1, "end_line": 30}}`
-  2. Chamada de edição cirúrgica: `{"action": "edit_file", "arguments": {"filepath": "...", "old_string": "...", "new_string": "..."}}`
-  3. Chamada de selamento obrigatória: `{"action": "submit_patch", "arguments": {}}`
+### Fase 1: Blindagem de Prompts com Few-Shot Tool Calling — ✅ Concluída (PRs #46, #47, #48)
+- **Diretiva Anti-Chat Mandatória:** Inserida nos 5 prompts (`system.md`, `explorer.md`, `locator.md`, `drafter.md`, `validator.md`) e nas 2 skills (`reproducer_writer`, `git_diff_sanitizer`).
+- **Regra de Escapamento de Aspas (`JSON QUOTE ESCAPING RULE`) + Parser Resiliente:** Reparo automático de aspas duplas internas não escapadas (`hasattr(data, "read")`) e quebras de linha literais em `ReActParser`.
+- **Injeção de Exemplos Few-Shot:** 2 exemplos concretos de chamada de ferramenta em formato JSON válido por prompt (`read_file`, `edit_file`, `submit_patch`).
 
-### Fase 2: Calibração de Turn Budgets & Roteamento em `agent.yaml`
-- Aumentar o budget de turnos do `drafter` de 5 para 8 turnos.
-- Aumentar o budget do `validator` de 5 para 8 turnos.
-- Configurar transição direta para o `drafter` se a localização do arquivo for confirmada no primeiro turno.
+### Fase 2: Calibração de Turn Budgets, Permissões & Sanitização — ✅ Concluída (PRs #47, #48)
+- `drafter` calibrado para `8 turnos / 180s` e `validator` para `6 turnos / 180s`.
+- Permissão de `submit_patch` liberada diretamente em `locator`, `drafter` e `validator`.
+- Sanitização automática de scripts temporários (`reproducer.py`) em `_tool_submit_patch()` antes do `git diff`.
+- Redução comprovada na GPU do Kaggle de **7 turnos (415s)** na v2.0 para **3 turnos (132s)** na v3.0 com **100% Pass@1** nas duas instâncias `requests_7505` e `requests_7502`.
 
 ### Fase 3: Post-Training com LoRA Adaptadores (Task 06)
 - Coletar trajetórias reais de resolução com `training/trajectory_collector.py`.
