@@ -76,6 +76,36 @@ class GemmaPromptFormatter:
                 '  "arguments": { "<arg_key>": "<arg_value>" }',
                 "}",
                 "```",
+                'JSON QUOTE ESCAPING RULE: Never put unescaped double quotes (") inside '
+                '"thought", "old_string", "new_string", or "command". Always use single '
+                "quotes (e.g. hasattr(data, 'read')) or escape as \\\".",
+                "",
+                "### Few-Shot Tool Call Examples",
+                "Example 1 (Surgical Edit via `edit_file`):",
+                "```json",
+                "{",
+                '  "thought": "Adding hasattr(data, \'read\') check to requests/models.py.",',
+                '  "sub_agent": "drafter",',
+                '  "tool": "edit_file",',
+                '  "arguments": {',
+                '    "filepath": "requests/models.py",',
+                '    "old_string": "    if isinstance(data, SupportsRead):\\n        return True",',
+                (
+                    '    "new_string": "    if isinstance(data, SupportsRead) '
+                    "or hasattr(data, 'read'):\\n        return True\""
+                ),
+                "  }",
+                "}",
+                "```",
+                "Example 2 (Finalizing via `submit_patch`):",
+                "```json",
+                "{",
+                '  "thought": "Source edit verified. Calling submit_patch immediately.",',
+                '  "sub_agent": "validator",',
+                '  "tool": "submit_patch",',
+                '  "arguments": {}',
+                "}",
+                "```",
                 "When the bug is fully resolved and verified, call `submit_patch` to finish.",
             ]
         )

@@ -31,7 +31,7 @@ Todas as **11 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 | **[TASK-10.6]** | Test Patch Toggle & Fallback for Demo Workspaces | - | PR [#34](https://github.com/RogerioLS/kaggle-competitions/pull/34) | 🟢 `main` |
 | **[TASK-10.7]** | Kaggle Offline Resilience & Hidden Dataset Sync | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | PR [#43](https://github.com/RogerioLS/kaggle-competitions/pull/43) | 🟢 `main` |
 | **[TASK-11]** | Submission v3.0 Prompt Hardening, Budget Calibration & Resilient JSON Parser | [#50](https://github.com/RogerioLS/kaggle-competitions/issues/50) | PR [#46](https://github.com/RogerioLS/kaggle-competitions/pull/46), [#47](https://github.com/RogerioLS/kaggle-competitions/pull/47), [#48](https://github.com/RogerioLS/kaggle-competitions/pull/48), [#49](https://github.com/RogerioLS/kaggle-competitions/pull/49) | 🟢 `main` |
-| **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | Pending Action | - | 🟡 Em Andamento |
+| **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | [#53](https://github.com/RogerioLS/kaggle-competitions/issues/53) | PR [#52](https://github.com/RogerioLS/kaggle-competitions/pull/52) | 🟢 `main` |
 
 ---
 

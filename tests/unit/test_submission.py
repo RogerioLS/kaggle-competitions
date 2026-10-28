@@ -38,6 +38,7 @@ class TestSubmissionPackaging:
             namelist = zf.namelist()
 
         assert "agent.yaml" in namelist
+        assert "eval_config.yaml" in namelist
         assert "configs/sampling.yaml" in namelist
         assert "sub_agents/explorer.yaml" in namelist
         assert "sub_agents/locator.yaml" in namelist

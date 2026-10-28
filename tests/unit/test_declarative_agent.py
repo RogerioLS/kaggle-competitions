@@ -57,12 +57,16 @@ class TestAgentSchemaValidation:
     def test_load_default_agent_yaml(self, default_agent_config: AgentConfig) -> None:
         """Verifies default agent.yaml and its sub-agents load correctly."""
         cfg = default_agent_config
-        assert cfg.name == "gemma-4-developer-agent"
+        assert cfg.name == "gemma_4_developer_agent"
         assert cfg.version == "1.0.0"
         assert cfg.model == "gemma-4-31b-it-qat-w4a16-ct"
-        assert cfg.budget.max_turns == 20
-        assert cfg.budget.timeout_seconds == 300
+        assert cfg.budget.max_turns == 30
+        assert cfg.budget.timeout_seconds == 120
+        assert cfg.budget.max_tool_calls == 25
+        assert cfg.budget.max_time_minutes == 5
+        assert cfg.sampling.max_output_tokens == 16384
         assert len(cfg.system_prompt_content) > 50
+        assert "submit_patch" in cfg.tools
 
         # Sub-agents
         assert set(cfg.sub_agents.keys()) == {"explorer", "locator", "drafter", "validator"}
@@ -397,7 +401,10 @@ class TestDeclarativeAgentBenchmarking:
     def test_prompts_contain_anti_chat_directive_and_valid_few_shot_json(
         self, default_agent_config: AgentConfig
     ) -> None:
-        """Verifies all agent prompts enforce anti-chat rules and valid JSON few-shots."""
+        """Verifies prompts enforce native ADK tool calling and formatter has JSON few-shots."""
+        from competitions.gemma_developer_agent.agent.inference_engine import (
+            GemmaPromptFormatter,
+        )
         from competitions.gemma_developer_agent.agent.react_orchestrator import (
             ReActParser,
         )
@@ -408,14 +415,24 @@ class TestDeclarativeAgentBenchmarking:
 
         for name, content in prompts_to_check.items():
             assert "DO NOT CHAT" in content, f"Prompt '{name}' missing anti-chat rule"
-            assert "Few-Shot" in content, f"Prompt '{name}' missing few-shot section"
+            # Guardrail: prompts/*.md must NOT force raw markdown ```json blocks in swegemma vLLM
             matches = ReActParser.JSON_BLOCK_PATTERN.findall(content)
-            assert len(matches) >= 2, f"Prompt '{name}' should have >= 2 JSON blocks"
-            # Verify the concrete few-shot examples parse cleanly
-            for block in matches[-2:]:
-                action = ReActParser.parse(f"```json\n{block}\n```")
-                assert action.tool
-                assert action.sub_agent in {"explorer", "locator", "drafter", "validator"}
+            assert len(matches) == 0, (
+                f"Prompt '{name}' must not contain raw markdown JSON blocks that override "
+                "native vLLM gemma4 <|tool_call> parsing in swegemma."
+            )
+
+        # Verify local GemmaPromptFormatter injects valid Few-Shot JSON blocks for Notebook runs
+        rendered_tools = GemmaPromptFormatter.render_tool_declarations(
+            {"edit_file": {"description": "Edit file"}, "submit_patch": {"description": "Submit"}}
+        )
+        assert "Few-Shot" in rendered_tools
+        fmt_matches = ReActParser.JSON_BLOCK_PATTERN.findall(rendered_tools)
+        assert len(fmt_matches) >= 2
+        for block in fmt_matches[-2:]:
+            action = ReActParser.parse(f"```json\n{block}\n```")
+            assert action.tool
+            assert action.sub_agent in {"explorer", "locator", "drafter", "validator"}
 
     def test_submit_patch_sanitizes_ephemeral_reproducer_files(
         self, default_agent_config: AgentConfig

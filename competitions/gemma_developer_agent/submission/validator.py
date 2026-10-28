@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import posixpath
 import re
 import sys
 import tempfile
@@ -22,8 +23,6 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
-import yaml
-
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -31,10 +30,12 @@ if str(REPO_ROOT) not in sys.path:
 from competitions.gemma_developer_agent.agent.schema import (  # noqa: E402
     SUPPORTED_TOOLS,
     AgentConfig,
+    IncludeRef,
+    safe_load_yaml_with_includes,
 )
 
 MAX_CODE_SUBMISSION_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB max for code/prompts
-MAX_ADAPTER_SUBMISSION_SIZE_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB max when weights included
+MAX_ADAPTER_SUBMISSION_SIZE_BYTES = 3 * 1024 * 1024 * 1024  # 3 GiB max when weights included
 MAX_TURNS_UPPER_BOUND = 50
 MAX_TIMEOUT_SECONDS_UPPER_BOUND = 1200
 
@@ -197,21 +198,26 @@ class SubmissionValidator:
         with zipfile.ZipFile(self.archive_path, "r") as zf:
             try:
                 raw_yaml = zf.read("agent.yaml").decode("utf-8")
-                agent_data = yaml.safe_load(raw_yaml)
+                agent_data = safe_load_yaml_with_includes(raw_yaml)
             except Exception as exc:
                 return False, [f"Failed to parse agent.yaml from archive: {exc}"]
 
             if not isinstance(agent_data, dict):
                 return False, ["agent.yaml must contain a YAML mapping."]
 
-            # Check required fields
-            for req in ("name", "version", "model", "budget", "workflow", "sub_agents"):
-                if req not in agent_data:
-                    errors.append(f"Missing required field '{req}' in agent.yaml.")
+            is_adk_schema = "instruction" in agent_data or "tools" in agent_data
+            if is_adk_schema:
+                for req in ("name", "model", "instruction", "tools"):
+                    if req not in agent_data:
+                        errors.append(f"Missing required field '{req}' in agent.yaml.")
+            else:
+                for req in ("name", "version", "model", "budget", "workflow", "sub_agents"):
+                    if req not in agent_data:
+                        errors.append(f"Missing required field '{req}' in agent.yaml.")
 
-            # Check budget limits
+            # Check budget limits (legacy `budget:` or official `eval_config.yaml`)
             budget = agent_data.get("budget", {})
-            if isinstance(budget, dict):
+            if isinstance(budget, dict) and budget:
                 max_turns = budget.get("max_turns", 0)
                 timeout = budget.get("timeout_seconds", 0)
                 if max_turns > MAX_TURNS_UPPER_BOUND:
@@ -225,56 +231,121 @@ class SubmissionValidator:
                         f"({MAX_TIMEOUT_SECONDS_UPPER_BOUND})."
                     )
 
-            # Check system prompt reference
-            sys_prompt = agent_data.get("system_prompt", "prompts/system.md")
-            if sys_prompt not in available_files:
-                errors.append(f"Referenced system prompt '{sys_prompt}' not found in archive.")
+            if "eval_config.yaml" in available_files:
+                try:
+                    eval_raw = zf.read("eval_config.yaml").decode("utf-8")
+                    eval_data = safe_load_yaml_with_includes(eval_raw)
+                    if not isinstance(eval_data, dict) or not isinstance(
+                        eval_data.get("evaluation"), dict
+                    ):
+                        errors.append("eval_config.yaml must define an 'evaluation' mapping.")
+                    else:
+                        eval_sec = eval_data["evaluation"]
+                        if eval_sec.get("max_turns", 0) > MAX_TURNS_UPPER_BOUND:
+                            errors.append(
+                                f"eval_config.yaml max_turns exceeds {MAX_TURNS_UPPER_BOUND}."
+                            )
+                        if eval_sec.get("timeout_seconds", 0) > MAX_TIMEOUT_SECONDS_UPPER_BOUND:
+                            errors.append(
+                                "eval_config.yaml timeout_seconds exceeds "
+                                f"{MAX_TIMEOUT_SECONDS_UPPER_BOUND}."
+                            )
+                except Exception as exc:
+                    errors.append(f"Failed to parse eval_config.yaml: {exc}")
 
-            # Check sampling config
-            sampling_cfg = agent_data.get("sampling_config")
-            if sampling_cfg and sampling_cfg not in available_files:
-                errors.append(f"Referenced sampling config '{sampling_cfg}' not found in archive.")
+            # Check system prompt / instruction reference
+            sys_prompt = agent_data.get("instruction") or agent_data.get(
+                "system_prompt", "prompts/system.md"
+            )
+            if isinstance(sys_prompt, IncludeRef) or "system_prompt" in agent_data:
+                norm_sys = posixpath.normpath(str(sys_prompt))
+                if norm_sys not in available_files:
+                    errors.append(f"Referenced system prompt '{norm_sys}' not found in archive.")
 
-            # Check sub-agents
-            sub_agents = agent_data.get("sub_agents", {})
-            if not isinstance(sub_agents, dict) or not sub_agents:
+            # Check sampling / generate_content_config reference
+            sampling_cfg = agent_data.get("generate_content_config") or agent_data.get(
+                "sampling_config"
+            )
+            if isinstance(sampling_cfg, (IncludeRef, str)):
+                norm_samp = posixpath.normpath(str(sampling_cfg))
+                if norm_samp not in available_files:
+                    errors.append(f"Referenced sampling config '{norm_samp}' not found in archive.")
+
+            # Check adapter declaration if present on root agent
+            declared_adapter = agent_data.get("adapter")
+            if declared_adapter:
+                expected_ac = f"adapters/{declared_adapter}/adapter_config.json"
+                if expected_ac not in available_files:
+                    errors.append(f"Declared adapter '{declared_adapter}' missing '{expected_ac}'.")
+
+            # Collect sub-agent references and check root tools
+            sub_agents_map: Dict[str, str] = {}
+            raw_tools = agent_data.get("tools", [])
+            if isinstance(raw_tools, list):
+                for entry in raw_tools:
+                    if isinstance(entry, str):
+                        if entry not in SUPPORTED_TOOLS:
+                            errors.append(f"Root agent.yaml references unsupported tool '{entry}'.")
+                    elif isinstance(entry, dict) and isinstance(entry.get("agent_tool"), dict):
+                        cfg_path = entry["agent_tool"].get("config_path", "")
+                        if cfg_path:
+                            sa_name = Path(str(cfg_path)).stem
+                            sub_agents_map[sa_name] = posixpath.normpath(str(cfg_path))
+
+            raw_sub_agents = agent_data.get("sub_agents")
+            if isinstance(raw_sub_agents, dict):
+                for sa_name, sa_path in raw_sub_agents.items():
+                    sub_agents_map[str(sa_name)] = posixpath.normpath(str(sa_path))
+            elif isinstance(raw_sub_agents, list):
+                for item in raw_sub_agents:
+                    if isinstance(item, dict) and item.get("config_path"):
+                        cfg_path = posixpath.normpath(str(item["config_path"]))
+                        sub_agents_map[Path(cfg_path).stem] = cfg_path
+
+            if not sub_agents_map and not is_adk_schema:
                 errors.append("agent.yaml must declare at least one sub-agent in 'sub_agents'.")
             else:
-                for sa_name, sa_path in sub_agents.items():
+                for sa_name, sa_path in sub_agents_map.items():
                     if sa_path not in available_files:
                         errors.append(
                             f"Sub-agent '{sa_name}' config file '{sa_path}' missing in archive."
                         )
                         continue
 
-                    # Read sub-agent config
                     try:
                         sa_raw = zf.read(sa_path).decode("utf-8")
-                        sa_data = yaml.safe_load(sa_raw)
+                        sa_data = safe_load_yaml_with_includes(sa_raw)
                         if isinstance(sa_data, dict):
-                            # Validate prompt file
-                            prompt_ref = sa_data.get("prompt", "")
-                            if prompt_ref and prompt_ref not in available_files:
-                                errors.append(
-                                    f"Sub-agent '{sa_name}' prompt '{prompt_ref}' missing."
+                            prompt_ref = sa_data.get("instruction") or sa_data.get("prompt", "")
+                            if prompt_ref:
+                                sa_dir = posixpath.dirname(sa_path)
+                                resolved_prompt = posixpath.normpath(
+                                    posixpath.join(sa_dir, str(prompt_ref))
+                                    if str(prompt_ref).startswith(".")
+                                    else str(prompt_ref)
                                 )
+                                if resolved_prompt not in available_files:
+                                    errors.append(
+                                        f"Sub-agent '{sa_name}' prompt '{prompt_ref}' missing."
+                                    )
 
-                            # Validate tools
-                            tools = sa_data.get("allowed_tools", [])
+                            tools = sa_data.get("tools")
+                            if tools is None:
+                                tools = sa_data.get("allowed_tools", [])
                             for t in tools:
-                                if t not in SUPPORTED_TOOLS:
+                                if isinstance(t, str) and t not in SUPPORTED_TOOLS:
                                     errors.append(
                                         f"Sub-agent '{sa_name}' references unsupported tool '{t}'."
                                     )
                     except Exception as e:
                         errors.append(f"Error parsing sub-agent '{sa_name}' config: {e}")
 
-            # Check workflow
+            # Check workflow if present
             workflow = agent_data.get("workflow", {})
             if isinstance(workflow, dict):
                 sequence = workflow.get("sequence", [])
                 for step in sequence:
-                    if step not in sub_agents:
+                    if step not in sub_agents_map:
                         errors.append(
                             f"Workflow sequence step '{step}' not in declared sub_agents."
                         )

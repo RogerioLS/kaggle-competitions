@@ -162,7 +162,7 @@ class TestKaggleOfflineKernel:
             dry_run=True,
         )
         assert runner.verify_offline_environment() is True
-        assert runner.agent_config.name == "gemma-4-developer-agent"
+        assert runner.agent_config.name == "gemma_4_developer_agent"
 
     def test_kernel_run_and_export_predictions(self, tmp_path) -> None:
         """Verifies predictions.jsonl and submission.csv artifacts generation."""

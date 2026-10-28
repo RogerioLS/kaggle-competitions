@@ -349,7 +349,7 @@ if not agent_yaml_path:
     else:
         fallback_agent.parent.mkdir(parents=True, exist_ok=True)
         fallback_agent.write_text(
-            'name: "gemma-4-developer-agent"\\n'
+            'name: "gemma_4_developer_agent"\\n'
             'version: "1.0.0"\\n'
             'model: "gemma-4-31b-it-qat-w4a16-ct"\\n',
             encoding="utf-8",
