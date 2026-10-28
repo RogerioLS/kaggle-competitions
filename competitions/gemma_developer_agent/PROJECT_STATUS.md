@@ -31,6 +31,7 @@ Todas as **11 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 | **[TASK-10.6]** | Test Patch Toggle & Fallback for Demo Workspaces | - | PR [#34](https://github.com/RogerioLS/kaggle-competitions/pull/34) | 🟢 `main` |
 | **[TASK-10.7]** | Kaggle Offline Resilience & Hidden Dataset Sync | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | PR [#43](https://github.com/RogerioLS/kaggle-competitions/pull/43) | 🟢 `main` |
 | **[TASK-11]** | Submission v3.0 Prompt Hardening, Budget Calibration & Resilient JSON Parser | [#50](https://github.com/RogerioLS/kaggle-competitions/issues/50) | PR [#46](https://github.com/RogerioLS/kaggle-competitions/pull/46), [#47](https://github.com/RogerioLS/kaggle-competitions/pull/47), [#48](https://github.com/RogerioLS/kaggle-competitions/pull/48), [#49](https://github.com/RogerioLS/kaggle-competitions/pull/49) | 🟢 `main` |
+| **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | Pending Action | - | 🟡 Em Andamento |
 
 ---
 
@@ -62,8 +63,13 @@ Todas as **11 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 
 ---
 
-### Submissão v3.0 (27/10/2026) — Em Avaliação no Kaggle
+### Submissão v3.0 (27/10/2026)
 * **Status no Notebook GPU (4x NVIDIA L4):** 🟢 `100.0% Pass@1` no Benchmark em Lote (`2/2 RESOLVED`: `requests_7505` em 3 turnos / `132.39s` e `requests_7502` em 3 turnos / `142.23s`).
+* **Status no Avaliador Oficial Kaggle:** 🟢 `Succeeded` (após 14 horas de execução) | **Score Pass@1 Oficial:** `0.00`.
+* **Post-Mortem Técnico (Cruzamento com `HARNESS_README.md` e `sample_submission` Oficial da API do Kaggle):**
+  1. **Schema do `agent.yaml` vs. Compilador `adk-submission` (`SandboxedAgentConfig`):** O compilador oficial do Google ADK (`compile_submission`) espera `instruction: !include prompts/system.md`, a lista explícita `tools: [run_command, read_file, edit_file, write_file, get_status, submit_patch, ...]` na raiz do `agent.yaml`, `generate_content_config: !include configs/sampling.yaml` e sub-agentes via `agent_tool: {config_path: ..., skip_summarization: true}`. O nosso `agent.yaml` usava chaves customizadas (`system_prompt`, `sampling_config`, `sub_agents` como dict) e não declarava `tools:` no agente raiz.
+  2. **Conflito entre o Tool Calling Nativo do vLLM (`tool_call_parser="gemma4"`) e o Bloco Markdown ```` ```json ``` ```` nos Prompts:** No avaliador oficial `swegemma`, o vLLM exige chamadas nativas `<|tool_call>` da API de tools do ADK. Como `prompts/system.md` obrigava o modelo a responder exclusivamente com texto Markdown ```` ```json { "sub_agent": ... } ``` ````, o `swegemma` tratava cada turno como resposta puramente textual (`turn_has_tool_call == False`), disparava 3 *continuation nudges* e encerrava cada tarefa com patch vazio (`0.00`).
+  3. **Ausência do `eval_config.yaml` (Causa das 14 horas de duração):** Sem `eval_config.yaml` na raiz do `submission.zip`, o avaliador utilizou os tetos máximos padrão (`max_time_minutes: 60`, `max_tool_calls: 100`, `max_turns: 500`, `timeout_seconds: 300`), prolongando a execução para 14 horas.
 * **Pacote Gerado (`submission.zip`):** `11,089 bytes` comprimido (`18,880 bytes` descomprimido), 13 arquivos declarativos validados (`SHA256: 4afb16ce6aeea090...`, `100% Compliant`).
 * **Melhorias Estruturais Implementadas (PRs [#46](https://github.com/RogerioLS/kaggle-competitions/pull/46), [#47](https://github.com/RogerioLS/kaggle-competitions/pull/47), [#48](https://github.com/RogerioLS/kaggle-competitions/pull/48)):**
   1. **Blindagem Anti-Chat + Exemplos Few-Shot JSON (`prompts/*.md`):** Todos os 5 prompts (`system`, `explorer`, `locator`, `drafter`, `validator`) agora incluem a regra `CRITICAL OUTPUT RULE — ZERO CONVERSATIONAL CHATTER`, `JSON QUOTE ESCAPING RULE` e 2 exemplos Few-Shot JSON completos por arquivo.
