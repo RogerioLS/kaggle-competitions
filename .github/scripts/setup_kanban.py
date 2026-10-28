@@ -245,6 +245,15 @@ def setup_tasks(token: str, milestone_map: Dict[str, int]) -> None:
             "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
             "labels": ["area: agent", "area: submission", "type: feature", "priority: high"],
         },
+        {
+            "id": "TASK-12",
+            "title": (
+                "[TASK-12] Submission v4.0 Official swegemma & adk-submission " "Contract Alignment"
+            ),
+            "file": "task-12-swegemma-adk-schema-alignment.md",
+            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
+            "labels": ["area: agent", "area: submission", "type: feature", "priority: high"],
+        },
     ]
 
     for task in task_definitions:
