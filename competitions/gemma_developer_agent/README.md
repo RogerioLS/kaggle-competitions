@@ -121,7 +121,7 @@ The competition sandbox provides 9 native tools to the agent:
 | **[TASK-09]** | Gemma 4 Autonomous ReAct Engine & Tool-Calling Loop | [#25](https://github.com/RogerioLS/kaggle-competitions/issues/25) | 🟢 Completed | `main` |
 | **[TASK-10]** | Interactive Kaggle GPU Evaluation Notebook & Telemetry | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | 🟢 Completed | `main` |
 | **[TASK-11]** | Submission v3.0 Prompt Hardening, Budget Calibration & Resilient JSON Parser | [#50](https://github.com/RogerioLS/kaggle-competitions/issues/50) | 🟢 Completed | `main` |
-| **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | Pending Action | 🟡 In Progress | `docs/task-12-swegemma-adk-schema-alignment` |
+| **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | [#53](https://github.com/RogerioLS/kaggle-competitions/issues/53) | 🟢 Completed | `main` |
 
 ---
 

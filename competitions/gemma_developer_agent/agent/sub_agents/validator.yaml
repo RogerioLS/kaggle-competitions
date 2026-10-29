@@ -1,10 +1,8 @@
 name: validator
-role: "Test Runner & Submission Gatekeeper"
-description: "Verifies git diffs and immediately seals final submission patches via submit_patch."
-prompt: "prompts/validator.md"
-max_turns: 6
-timeout_seconds: 180
-allowed_tools:
+description: "Test Runner & Submission Gatekeeper — Verifies git diffs and immediately seals final submission patches via submit_patch."
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include ../prompts/validator.md
+tools:
   - submit_patch
   - run_command
   - read_file
@@ -14,3 +12,4 @@ allowed_tools:
   - search_similar_code
   - get_code_neighbors
   - get_code_subgraph
+generate_content_config: !include ../configs/sampling.yaml

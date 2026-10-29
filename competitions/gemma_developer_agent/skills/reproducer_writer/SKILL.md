@@ -1,27 +1,18 @@
 ---
 name: reproducer_writer
-description: Standard operating procedure for running inline, zero-pollution SWE-bench issue reproductions.
+description: Standard Operating Procedure for verifying defects using targeted tests or inline commands without polluting the git workspace.
 ---
 
-# Reproducer Writer Skill
+# Skill: Minimal Defect Verification (`reproducer_writer`)
 
-## CRITICAL OUTPUT RULE — ZERO CONVERSATIONAL CHATTER
-- **DO NOT CHAT.** Emit ONLY a single ` ```json ... ``` ` action block per turn.
-- **DO NOT WRITE UNTRACKED FILES TO DISK.** Never use `write_file` to create `reproducer.py`, `reproduce_issue.py`, or `test_reproduce.py`, because untracked files pollute `git diff` and invalidate the SWE-bench patch.
+## Critical Rule
+- **DO NOT CHAT**: Invoke tools directly without conversational filler.
+- **NEVER create untracked files in `/workspace`** (such as `/workspace/reproducer.py` or `test_reproduce.py`), because `submit_patch` runs `git add -N . && git diff HEAD` inside `/workspace`.
 
-## Protocol
-1. **Inline Reproduction Only**: If you need to reproduce the bug or verify a fix, execute a one-liner via `run_command` using `python3 -c "..."` or run a single existing test file (`pytest path/to/test_file.py -k test_name`).
-2. **Never Run Full Test Suites**: Never run `pytest` across the entire `tests/` directory, as it will time out before `submit_patch` can be called.
-3. **Prioritize Patch & Submission**: As soon as you identify the root cause in the source file, apply the fix with `edit_file` and immediately call `submit_patch`.
-
-## Few-Shot Tool Calling Example
-```json
-{
-  "thought": "Verify the fix in requests/models.py using an inline python3 -c one-liner without creating untracked files.",
-  "sub_agent": "validator",
-  "tool": "run_command",
-  "arguments": {
-    "command": "python3 -c \"import requests; print('verified')\""
-  }
-}
-```
+## Verification Protocol
+1. **Prefer Targeted Existing Tests or Inline One-Liners**:
+   - Run a specific test node via `run_command`: `pytest tests/test_module.py -k test_function -q`
+   - Or run an inline Python check via `run_command`: `python3 -c "import requests; ..."`
+   - If you must write a temporary script, write it ONLY to `/tmp/repro.py` via `run_command`.
+2. **Never Run Full-Repo Test Suites**:
+   - Never run bare `pytest` or `pytest .` without a target file path.

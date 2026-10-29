@@ -125,6 +125,13 @@ class SubmissionPackager:
                 raise FileNotFoundError(f"Mandatory agent.yaml missing at {agent_yaml}")
         entries.append((agent_yaml, "agent.yaml"))
 
+        # 1b. Root eval_config.yaml (official swegemma evaluation budget configuration)
+        eval_config_yaml = self.agent_dir / "eval_config.yaml"
+        if not eval_config_yaml.is_file() and (self.base_dir / "eval_config.yaml").is_file():
+            eval_config_yaml = self.base_dir / "eval_config.yaml"
+        if eval_config_yaml.is_file():
+            entries.append((eval_config_yaml, "eval_config.yaml"))
+
         # 2. Configs (sampling.yaml)
         configs_dir = self.agent_dir / "configs"
         if configs_dir.is_dir():
