@@ -60,10 +60,10 @@ class TestAgentSchemaValidation:
         assert cfg.name == "gemma_4_developer_agent"
         assert cfg.version == "1.0.0"
         assert cfg.model == "gemma-4-31b-it-qat-w4a16-ct"
-        assert cfg.budget.max_turns == 30
+        assert cfg.budget.max_turns == 40
         assert cfg.budget.timeout_seconds == 120
-        assert cfg.budget.max_tool_calls == 25
-        assert cfg.budget.max_time_minutes == 5
+        assert cfg.budget.max_tool_calls == 35
+        assert cfg.budget.max_time_minutes == 7
         assert cfg.sampling.max_output_tokens == 16384
         assert len(cfg.system_prompt_content) > 50
         assert "submit_patch" in cfg.tools

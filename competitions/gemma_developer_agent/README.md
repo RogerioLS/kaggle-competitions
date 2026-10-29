@@ -144,7 +144,7 @@ The competition sandbox provides 9 native tools to the agent:
 | **[TASK-10]** | Interactive Kaggle GPU Evaluation Notebook & Telemetry | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | 🟢 Completed | `main` |
 | **[TASK-11]** | Submission v3.0 Prompt Hardening, Budget Calibration & Resilient JSON Parser | [#50](https://github.com/RogerioLS/kaggle-competitions/issues/50) | 🟢 Completed | `main` |
 | **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | [#53](https://github.com/RogerioLS/kaggle-competitions/issues/53) | 🟢 Completed | `main` |
-| **[TASK-13]** | Empirical Hotspot Priors, Localization & Surgical Resiliency | [#55](https://github.com/RogerioLS/kaggle-competitions/issues/55) | 🟡 Planned | `feat/task-13-empirical-localization-hotspots` |
+| **[TASK-13]** | Empirical Hotspot Priors, Localization & Surgical Resiliency | [#55](https://github.com/RogerioLS/kaggle-competitions/issues/55) | 🟢 Completed | `feat/task-13-empirical-localization-hotspots` |
 
 ---
 
