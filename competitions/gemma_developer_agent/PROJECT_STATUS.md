@@ -1,15 +1,16 @@
 # 📋 Status Geral do Projeto e Guia de Retomada (Handoff)
 
-> **Data de Atualização:** 27 de Outubro de 2026  
+> **Data de Atualização:** 29 de Outubro de 2026  
 > **Repositório:** `RogerioLS/kaggle-competitions`  
-> **Branch Atual:** `main` (100% atualizada e sincronizada com `origin/main`)  
+> **Branch Atual:** `feat/task-12-official-swegemma-adk-alignment` (Pronta para merge)  
 > **Status de Qualidade:** 🟢 123/123 Testes Unitários Passando | Clean Chassis Compliant  
+> **Score Oficial no Kaggle:** 🟢 **0.13** (Ref: `57739851` | 78.400 bytes gerados)  
 
 ---
 
 ## 🧭 Resumo Executivo das Tarefas
 
-Todas as **11 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent** foram implementadas, testadas, auditadas e integradas diretamente na branch `main`:
+Todas as **12 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent** foram implementadas, testadas, auditadas e integradas:
 
 | Task ID | Descrição / Módulo | Issue | Pull Request | Status |
 | :--- | :--- | :---: | :---: | :---: |
@@ -88,6 +89,20 @@ Todas as **11 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 
 ---
 
+### Submissão v4.0 (28/10/2026 - 29/10/2026) — 🏆 MARCO HISTÓRICO (Pass@1: 0.13)
+* **ID no Kaggle (`ref`):** `57739851`
+* **Status no Avaliador Oficial Kaggle:** 🟢 `Succeeded / Complete`
+* **Public Score Oficial:** 🟢 **`0.13`** (13% das tarefas privadas do benchmark resolvidas e verificadas em Container B!)
+* **Tamanho do Parquet de Predições:** **`78.400 bytes`** (contra os `3.230 bytes` de predições vazias das submissões anteriores).
+* **Pacote Submetido (`submission.zip`):** `9.191 bytes`, 14 arquivos validados com 100% de conformidade com o compilador oficial `adk-submission` e `swegemma`.
+* **Soluções Estruturais Implementadas (TASK-12 / PR #52):**
+  1. **Schema Oficial do Google ADK (`SandboxedAgentConfig`):** Inclusão de `instruction: !include prompts/system.md`, declaração explícita de `tools:` no agente raiz, `generate_content_config: !include configs/sampling.yaml`, e orquestração de sub-agentes via `agent_tool: {config_path: ..., skip_summarization: true}`.
+  2. **Inclusão do `eval_config.yaml`:** Calibração dos orçamentos de execução (`timeout_seconds: 120`, `max_tool_calls: 25`, `max_time_minutes: 5`, `max_turns: 30`) que controlaram a execução segura dentro dos limites do avaliador.
+  3. **Tool-Calling Nativo do vLLM (`tool_call_parser="gemma4"`):** Limpeza dos prompts para remover blocos Markdown ```` ```json ``` ```` que causavam `turn_has_tool_call == False` no `swegemma`, permitindo que o modelo invocasse as ferramentas via tags nativas `<|tool_call>`.
+  4. **Compatibilidade Dual:** Manutenção do gerador de Few-Shot em runtime no `inference_engine.py` para testes locais e notebooks GPU (`100% Pass@1` nos testes e no benchmark interativo).
+
+---
+
 ## 🏛️ Anatomia da Arquitetura Construída
 
 ```text
@@ -136,30 +151,34 @@ competitions/gemma_developer_agent/
 
 ---
 
-## 🎯 Plano Tático para a Versão 3.0 (Rumo à Zona de Medalhas: Pass@1 > 0.15)
+## 🎯 Plano Tático para a Versão 5.0 (Rumo à Zona de Medalhas & Top Tier: Pass@1 > 0.20+)
 
-O Leaderboard atual possui a seguinte distribuição de competidores:
-* 🥇 **Top 1 (Ouro):** ~0.24 (24% de resolução)
-* 🥈 **Top 2 a Top 6 (Prata/Bronze):** 0.17 a 0.18 (17% - 18%)
-* 🥉 **Baselines Simples:** 0.10 a 0.12 (10% - 12%)
+Com a validação oficial da v4.0 no Leaderboard (`Pass@1 = 0.13`), a infraestrutura declarativa está consolidada. O Leaderboard oficial atual apresenta a seguinte distribuição:
+* 🥇 **Top 1 a Top 6:** `0.24` (24% de resolução)
+* 🥈 **Top 290:** `>= 0.20` (20% - 22%)
+* 🥉 **Threshold Mediano:** `0.15`
+* 🚀 **Nossa Posição Atual (v4.0):** **`0.13`** (Atingido com modelo base sem LoRA e orçamento conservador de 25 tools / 5 min).
 
-Para cruzar a barreira do zero e disputar a zona de medalhas, o plano de ataque está estruturado em 3 fases complementares:
+Para escalar de `0.13` para `>= 0.20+` e entrar no Top Tier global, os 3 pilares de evolução identificados são:
 
-### Fase 1: Blindagem de Prompts com Few-Shot Tool Calling — ✅ Concluída (PRs #46, #47, #48)
-- **Diretiva Anti-Chat Mandatória:** Inserida nos 5 prompts (`system.md`, `explorer.md`, `locator.md`, `drafter.md`, `validator.md`) e nas 2 skills (`reproducer_writer`, `git_diff_sanitizer`).
-- **Regra de Escapamento de Aspas (`JSON QUOTE ESCAPING RULE`) + Parser Resiliente:** Reparo automático de aspas duplas internas não escapadas (`hasattr(data, "read")`) e quebras de linha literais em `ReActParser`.
-- **Injeção de Exemplos Few-Shot:** 2 exemplos concretos de chamada de ferramenta em formato JSON válido por prompt (`read_file`, `edit_file`, `submit_patch`).
+### Pilar 1: Otimização de Orçamento & Busca Semântica em Grafo (Alavanca Imediata)
+- **Aumento Calibrado do Orçamento (`eval_config.yaml`):**
+  - Nosso `eval_config.yaml` da v4.0 usou `max_tool_calls: 25`, `max_turns: 30` e `max_time_minutes: 5`.
+  - Tarefas mais complexas de bibliotecas como `fastapi` e `rich` demandam leitura de múltiplos nós no grafo e 1 ou 2 tentativas adicionais de `edit_file`.
+  - Subir para `max_tool_calls: 35`, `max_turns: 40` e `max_time_minutes: 8` dará fôlego para tarefas que bateram no teto de 25 chamadas.
+- **Enriquecimento das Instruções de Graph Retrieval (`prompts/system.md` e `sub_agents/explorer.yaml`):**
+  - O dataset fornece grafos de dependência e embeddings pré-computados (`graphs/*.json` e `embeddings/*.npz`).
+  - Encorajar o uso coordenado de `search_similar_code` seguido de `get_code_neighbors` reduz o tempo gasto procurando arquivos e leva a edições precisas de primeira tentativa.
 
-### Fase 2: Calibração de Turn Budgets, Permissões & Sanitização — ✅ Concluída (PRs #47, #48)
-- `drafter` calibrado para `8 turnos / 180s` e `validator` para `6 turnos / 180s`.
-- Permissão de `submit_patch` liberada diretamente em `locator`, `drafter` e `validator`.
-- Sanitização automática de scripts temporários (`reproducer.py`) em `_tool_submit_patch()` antes do `git diff`.
-- Redução comprovada na GPU do Kaggle de **7 turnos (415s)** na v2.0 para **3 turnos (132s)** na v3.0 com **100% Pass@1** nas duas instâncias `requests_7505` e `requests_7502`.
+### Pilar 2: Fine-Tuning de Adaptadores LoRA Especializados (Task 06)
+- **Pipeline de Treinamento PEFT LoRA (`training/lora_trainer.py`):**
+  - O compilador `adk-submission` suporta adaptadores LoRA em `adapters/<adapter_name>/` (até 3 GiB).
+  - Treinar o Gemma 4 em pares de código (Issue Statement $\to$ Diff Cirúrgico) faz com que o modelo gere de imediato strings de substituição perfeitas para o `edit_file`, eliminando desvios e erros de indentação.
+- **Geração de Trajetórias com Trajectory Collector (`training/trajectory_collector.py`):**
+  - Utilizar as tarefas públicas de treino para coletar trajetórias de alta qualidade (`Pass@1`) para SFT (Supervised Fine-Tuning).
 
-### Fase 3: Post-Training com LoRA Adaptadores (Task 06)
-- Coletar trajetórias reais de resolução com `training/trajectory_collector.py`.
-- Treinar adaptadores PEFT LoRA em 4-bit (`training/lora_trainer.py`).
-- Incluir a pasta `adapters/gemma4-swe-w4a16/` diretamente no `submission.zip` para garantir que o modelo pense nativamente em sintaxe de patch.
+### Pilar 3: Heurística Anti-Regressão e Auto-Correção de `edit_file`
+- Se um `edit_file` falhar ou se o teste direcionado retornar erro de sintaxe, orientar o agente a executar `git checkout -- <file>` antes de tentar nova edição, evitando acúmulo de diffs corrompidos.
 
 ---
 
