@@ -33,12 +33,34 @@
 | Tier | Pass@1 Resolution Rate | Status / Competitor Benchmark |
 | :--- | :---: | :--- |
 | **Current #1 (Gold)** | **0.24** (24%) | Leading competitor on Kaggle Public Leaderboard |
-| **Top 2 – 6 (Gold/Silver)** | **0.17 – 0.18** | Clustered prompt-engineering & basic grep agents |
-| **Naive Baseline** | **~0.10 – 0.12** | Raw model without graph navigation or test loop |
+| **Top 2 – 6 (Gold/Silver)** | **0.17 – 0.22** | Clustered prompt-engineering & basic grep agents |
+| 🚀 **Our Standing (v4.0)** | 🟢 **0.13** (13%) | **Official Public Score (Ref `57739851` \| Rank #2585 / 4105 teams)** |
+| **Naive Baseline** | **~0.00 – 0.10** | Empty patches or unstructured conversational agents |
 | 🎯 **Our Target** | **> 0.25+** | **Leaderboard Top 1 + NeurIPS Paper Presentation** |
 
 > [!NOTE]
-> 76% of issues remain completely unsolved by existing competitors. By combining pre-computed code graphs, closed-loop pytest verification, and targeted LoRA fine-tuning, our architecture directly attacks the primary failure modes.
+> 76% of issues remain completely unsolved by existing competitors. By combining empirical hotspot priors, pre-computed code graphs, closed-loop pytest verification, and targeted LoRA fine-tuning, our architecture directly attacks the primary failure modes.
+
+---
+
+## 🔬 Empirical Dataset Archaeology & Golden Hotspots (129 Tasks)
+
+An exhaustive empirical audit of all 129 ground-truth benchmark tasks in `data/gemma-4-developer-agent/tasks.jsonl` (runnable via `python3 scripts/analyze_benchmark.py` and detailed in [`docs/BENCHMARK_ARCHAEOLOGY.md`](file:///mnt/c/Users/rogerio.silva/projetos/espec-42/kaggle-competitions/competitions/gemma_developer_agent/docs/BENCHMARK_ARCHAEOLOGY.md)) reveals:
+
+1. **Surgical Single-File Surgery (70.5%)**:
+   - **70.5% (91/129)** of tasks modify **exactly 1 single file**.
+   - **85.2% (110/129)** modify at most 2 files.
+   - **Patch size**: Median **8 lines added** and **2 lines deleted** (median 12 lines changed total). 56.6% change $\le 15$ lines.
+2. **The 18 "Golden Hotspot" Files (77.5% of Benchmark)**:
+   - **FastAPI (51.9% of benchmark)**: **86.6% (58/67)** of tasks touch just 6 files. In particular, [`fastapi/dependencies/utils.py`](file:///mnt/c/Users/rogerio.silva/projetos/espec-42/kaggle-competitions) alone accounts for **27 tasks (40.3% of FastAPI)**!
+   - **Rich (37.2% of benchmark)**: **64.6% (31/48)** of tasks touch 8 files (`console.py`, `cells.py`, `segment.py`, `markdown.py`, `syntax.py`, `table.py`, `traceback.py`, `text.py`).
+   - **Requests (10.1% of benchmark)**: **84.6% (11/13)** of tasks touch 4 files (`src/requests/utils.py`, `models.py`, `adapters.py`, `sessions.py`).
+   - **Overall**: **100 of the 129 tasks (77.5%)** modify one of these 18 hotspot files.
+3. **The Localization Bottleneck (92.2%)**:
+   - Only **7.8% (10/129)** of tasks mention the target file in the issue description.
+   - Only **10.1% (13/129)** include a Python traceback or exception.
+   - **0.0%** have hints. 92.2% require pure localization from high-level symptom descriptions (median 418 chars).
+   - *Conclusion*: Providing repo-aware hotspot priors and training a surgical LoRA adapter directly resolves the primary bottleneck holding agents back.
 
 ---
 
@@ -122,6 +144,7 @@ The competition sandbox provides 9 native tools to the agent:
 | **[TASK-10]** | Interactive Kaggle GPU Evaluation Notebook & Telemetry | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | 🟢 Completed | `main` |
 | **[TASK-11]** | Submission v3.0 Prompt Hardening, Budget Calibration & Resilient JSON Parser | [#50](https://github.com/RogerioLS/kaggle-competitions/issues/50) | 🟢 Completed | `main` |
 | **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | [#53](https://github.com/RogerioLS/kaggle-competitions/issues/53) | 🟢 Completed | `main` |
+| **[TASK-13]** | Empirical Hotspot Priors, Localization & Surgical Resiliency | [#55](https://github.com/RogerioLS/kaggle-competitions/issues/55) | 🟡 Planned | `feat/task-13-empirical-localization-hotspots` |
 
 ---
 
