@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -217,6 +218,191 @@ class TrajectoryCollector:
                     trajectories.append(Trajectory.from_dict(json.loads(clean)))
         return trajectories
 
+    @staticmethod
+    def _extract_hunks_from_patch(patch_str: str) -> List[Dict[str, Any]]:
+        """Parses unified diff patch into structured file replacement hunks."""
+        results: List[Dict[str, Any]] = []
+        current_file: Optional[str] = None
+        lines = patch_str.split("\n")
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if line.startswith("--- a/"):
+                current_file = line[6:].strip()
+                i += 1
+                continue
+            elif line.startswith("+++ b/") and current_file is None:
+                current_file = line[6:].strip()
+                i += 1
+                continue
+            elif line.startswith("@@"):
+                m = re.search(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", line)
+                if m:
+                    old_start = int(m.group(1))
+                    old_len = int(m.group(2)) if m.group(2) else 1
+                    hunk_lines = []
+                    i += 1
+                    while i < len(lines) and not (
+                        lines[i].startswith("--- a/") or lines[i].startswith("@@")
+                    ):
+                        hunk_lines.append(lines[i])
+                        i += 1
+
+                    old_lines = [
+                        hl[1:] for hl in hunk_lines if hl.startswith(" ") or hl.startswith("-")
+                    ]
+                    new_lines = [
+                        hl[1:] for hl in hunk_lines if hl.startswith(" ") or hl.startswith("+")
+                    ]
+
+                    results.append(
+                        {
+                            "file": current_file or "unknown.py",
+                            "old_start": old_start,
+                            "is_new_file": (old_start == 0 and old_len == 0),
+                            "old_string": "\n".join(old_lines),
+                            "new_string": "\n".join(new_lines),
+                        }
+                    )
+                    continue
+            i += 1
+        return results
+
+    @classmethod
+    def collect_from_tasks_jsonl(cls, tasks_path: Path) -> List[Trajectory]:
+        """Extracts ground-truth SFT trajectories directly from SWE-bench tasks.jsonl."""
+        collector = cls()
+        path = Path(tasks_path).resolve()
+        if not path.is_file():
+            raise FileNotFoundError(f"tasks.jsonl not found at {path}")
+
+        trajectories: List[Trajectory] = []
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                raw = line.strip()
+                if not raw:
+                    continue
+                task = json.loads(raw)
+                instance = SWEInstance(
+                    instance_id=task.get("instance_id", ""),
+                    repo=task.get("repo", ""),
+                    base_commit=task.get("base_commit", ""),
+                    problem_statement=task.get("problem_statement", ""),
+                    hints_text=task.get("hints_text", ""),
+                )
+                patch = task.get("patch", "")
+                hunks = collector._extract_hunks_from_patch(patch)
+                if not hunks:
+                    continue
+
+                turns: List[ChatTurn] = []
+                # 1. Initial user request
+                turns.append(
+                    ChatTurn(role="user", content=collector.format_initial_prompt(instance))
+                )
+
+                # 2. Explorer reads target file around bug
+                first_hunk = hunks[0]
+                read_start = max(1, first_hunk["old_start"] - 5)
+                read_end = first_hunk["old_start"] + 35
+                model_read_payload = json.dumps(
+                    {
+                        "tool": "read_file",
+                        "arguments": {
+                            "filepath": first_hunk["file"],
+                            "start_line": read_start,
+                            "end_line": read_end,
+                        },
+                    },
+                    indent=2,
+                )
+                turns.append(
+                    ChatTurn(
+                        role="model",
+                        content=(
+                            f"[EXPLORER] Inspecting target file '{first_hunk['file']}'.\n"
+                            f"```json\n{model_read_payload}\n```"
+                        ),
+                    )
+                )
+                turns.append(
+                    ChatTurn(
+                        role="user",
+                        content=f"Observation from read_file:\n{first_hunk['old_string']}\n",
+                    )
+                )
+
+                # 3. Drafter applies surgical edit
+                for hunk in hunks:
+                    if hunk["is_new_file"]:
+                        tool_name = "write_file"
+                        args = {"filepath": hunk["file"], "content": hunk["new_string"]}
+                    else:
+                        tool_name = "edit_file"
+                        args = {
+                            "filepath": hunk["file"],
+                            "old_string": hunk["old_string"],
+                            "new_string": hunk["new_string"],
+                        }
+
+                    model_edit_payload = json.dumps(
+                        {"tool": tool_name, "arguments": args}, indent=2
+                    )
+                    turns.append(
+                        ChatTurn(
+                            role="model",
+                            content=(
+                                f"[DRAFTER] Applying surgical fix in '{hunk['file']}'.\n"
+                                f"```json\n{model_edit_payload}\n```"
+                            ),
+                        )
+                    )
+                    turns.append(
+                        ChatTurn(
+                            role="user",
+                            content=(
+                                f"Observation from {tool_name}:\n"
+                                f"File {hunk['file']} modified successfully."
+                            ),
+                        )
+                    )
+
+                # 4. Validator seals patch
+                model_submit_payload = json.dumps(
+                    {"tool": "submit_patch", "arguments": {}}, indent=2
+                )
+                turns.append(
+                    ChatTurn(
+                        role="model",
+                        content=(
+                            "[VALIDATOR] Staging final verified patch.\n"
+                            f"```json\n{model_submit_payload}\n```"
+                        ),
+                    )
+                )
+                turns.append(
+                    ChatTurn(
+                        role="user",
+                        content="Observation from submit_patch:\nPatch staged successfully.",
+                    )
+                )
+
+                trajectories.append(
+                    Trajectory(
+                        instance_id=instance.instance_id,
+                        repo=instance.repo,
+                        turns=turns,
+                        resolved=True,
+                        patch=patch,
+                        metadata={
+                            "files_changed": len(set(h["file"] for h in hunks)),
+                            "hunks_count": len(hunks),
+                        },
+                    )
+                )
+
+        return trajectories
+
     @classmethod
     def create_synthetic_trajectories(cls, count: int = 3) -> List[Trajectory]:
         """Generates realistic synthetic trajectories for offline bootstrapping and testing."""
@@ -310,9 +496,22 @@ def main() -> int:
         default=0,
         help="Generate N synthetic trajectories for bootstrapping.",
     )
+    parser.add_argument(
+        "--from-tasks",
+        type=str,
+        default=None,
+        help="Extract ground-truth SFT trajectories from tasks.jsonl path",
+    )
 
     args = parser.parse_args()
     out_path = Path(args.output)
+
+    if args.from_tasks:
+        tasks_path = Path(args.from_tasks)
+        trajectories = TrajectoryCollector.collect_from_tasks_jsonl(tasks_path)
+        TrajectoryCollector.save_to_jsonl(trajectories, out_path)
+        print(f"✔ Extracted {len(trajectories)} golden trajectories -> {out_path}")
+        return 0
 
     if args.generate_synthetic > 0:
         trajectories = TrajectoryCollector.create_synthetic_trajectories(

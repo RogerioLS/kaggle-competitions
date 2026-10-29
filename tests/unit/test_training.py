@@ -170,6 +170,35 @@ class TestTrajectoryCollector:
         assert loaded[0].instance_id == "synth_task_001"
         assert loaded[0].resolved is True
 
+    def test_collect_from_tasks_jsonl(self, tmp_path: Path) -> None:
+        """Verifies ground-truth trajectory extraction from tasks.jsonl."""
+        task_data = {
+            "instance_id": "test_001",
+            "repo": "fastapi/fastapi",
+            "base_commit": "abc1234",
+            "problem_statement": "Fix query validation",
+            "patch": (
+                "--- a/fastapi/utils.py\n"
+                "+++ b/fastapi/utils.py\n"
+                "@@ -10,3 +10,4 @@ def validate(val):\n"
+                "     if not val:\n"
+                "+        return None\n"
+                "     return val\n"
+            ),
+        }
+        tasks_file = tmp_path / "mock_tasks.jsonl"
+        tasks_file.write_text(json.dumps(task_data) + "\n", encoding="utf-8")
+
+        trajs = TrajectoryCollector.collect_from_tasks_jsonl(tasks_file)
+        assert len(trajs) == 1
+        assert trajs[0].instance_id == "test_001"
+        assert trajs[0].repo == "fastapi/fastapi"
+        assert trajs[0].resolved is True
+        assert len(trajs[0].turns) == 7
+        assert "read_file" in trajs[0].turns[1].content
+        assert "edit_file" in trajs[0].turns[3].content
+        assert "submit_patch" in trajs[0].turns[5].content
+
 
 class TestLoRATraining:
     """Verifies LoRA configuration, fine-tuning execution, and PEFT artifact export."""

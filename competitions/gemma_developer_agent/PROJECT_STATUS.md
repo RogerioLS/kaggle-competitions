@@ -2,15 +2,16 @@
 
 > **Data de Atualização:** 29 de Outubro de 2026  
 > **Repositório:** `RogerioLS/kaggle-competitions`  
-> **Branch Atual:** `feat/task-13-empirical-localization-hotspots` (Pronta para PR)  
+> **Branch Atual:** `feat/task-14-golden-trajectories-and-lora`  
 > **Status de Qualidade:** 🟢 123/123 Testes Unitários Passando | Clean Chassis Compliant  
 > **Score Oficial no Kaggle:** 🟢 **0.13** (Ref: `57739851` | 78.400 bytes gerados | Rank #2585 / 4105)  
+> **Submissão Recente Ativa:** 🟡 **Ref: `57777062`** (Status: `PENDING` | Submissão v5.0 TASK-13)  
 
 ---
 
 ## 🧭 Resumo Executivo das Tarefas
 
-Todas as **12 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent** foram implementadas, testadas, auditadas e integradas na `main`. A **TASK-13** encontra-se planejada para execução:
+Todas as **13 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent** foram implementadas, testadas, auditadas e integradas na `main`. A **TASK-14** encontra-se planejada para execução:
 
 | Task ID | Descrição / Módulo | Issue | Pull Request | Status |
 | :--- | :--- | :---: | :---: | :---: |
@@ -33,7 +34,8 @@ Todas as **12 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 | **[TASK-10.7]** | Kaggle Offline Resilience & Hidden Dataset Sync | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | PR [#43](https://github.com/RogerioLS/kaggle-competitions/pull/43) | 🟢 `main` |
 | **[TASK-11]** | Submission v3.0 Prompt Hardening, Budget Calibration & Resilient JSON Parser | [#50](https://github.com/RogerioLS/kaggle-competitions/issues/50) | PR [#46](https://github.com/RogerioLS/kaggle-competitions/pull/46), [#47](https://github.com/RogerioLS/kaggle-competitions/pull/47), [#48](https://github.com/RogerioLS/kaggle-competitions/pull/48), [#49](https://github.com/RogerioLS/kaggle-competitions/pull/49) | 🟢 `main` |
 | **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | [#53](https://github.com/RogerioLS/kaggle-competitions/issues/53) | PR [#54](https://github.com/RogerioLS/kaggle-competitions/pull/54) | 🟢 `main` |
-| **[TASK-13]** | Empirical Hotspot Priors, Localization & Surgical Resiliency | [#55](https://github.com/RogerioLS/kaggle-competitions/issues/55) | PR [#56](https://github.com/RogerioLS/kaggle-competitions/pull/56) | 🟢 Pronto |
+| **[TASK-13]** | Empirical Hotspot Priors, Localization & Surgical Resiliency | [#55](https://github.com/RogerioLS/kaggle-competitions/issues/55) | PR [#56](https://github.com/RogerioLS/kaggle-competitions/pull/56) | 🟢 `main` |
+| **[TASK-14]** | Ground-Truth Trajectory Extraction & LoRA Fine-Tuning Pipeline | [#57](https://github.com/RogerioLS/kaggle-competitions/issues/57) | - | 🟡 Planned |
 
 ---
 
@@ -102,6 +104,18 @@ Todas as **12 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
   3. **Tool-Calling Nativo do vLLM (`tool_call_parser="gemma4"`):** Limpeza dos prompts para remover blocos Markdown ```` ```json ``` ```` que causavam `turn_has_tool_call == False` no `swegemma`, permitindo que o modelo invocasse as ferramentas via tags nativas `<|tool_call>`.
   4. **Compatibilidade Dual:** Manutenção do gerador de Few-Shot em runtime no `inference_engine.py` para testes locais e notebooks GPU (`100% Pass@1` nos testes e no benchmark interativo).
   5. **Preservação Imutável:** Pacote v4.0 arquivado com segurança permanente em `artifacts/v4_0_submission_score_0_13.zip`.
+
+---
+
+### Submissão v5.0 (29/10/2026) — 🚀 EM AVALIAÇÃO (TASK-13)
+* **ID no Kaggle (`ref`):** `57777062`
+* **Status no Avaliador Oficial Kaggle:** 🟡 `SubmissionStatus.PENDING`
+* **Data de Envio:** 29/10/2026 16:39:51 UTC
+* **Pacote Submetido (`submission.zip`):** `10.765 bytes`, 14 arquivos validados (`SHA256: 51685c70378357f307363f90baf8e8d14c020bf0962c5cad42ad6c6768b7227d`).
+* **Inovações Testadas nesta Submissão:**
+  1. **Heurísticas dos 18 Hotspots Dourados**: Mapeamento semântico direto nos sub-agentes (`explorer.md`, `locator.md`, `system.md`) para os arquivos que cobrem 77.5% das tarefas do benchmark (com destaque para `fastapi/dependencies/utils.py` cobrindo 40.3% do FastAPI).
+  2. **Protocolo de Resiliência Cirúrgica (`drafter.md`)**: Re-leitura obrigatória com janela de 30 linhas em caso de falha de string matching no `edit_file`.
+  3. **Orçamentos Calibrados (`eval_config.yaml`)**: `max_tool_calls: 35`, `max_turns: 40`, `max_time_minutes: 7`.
 
 ---
 
