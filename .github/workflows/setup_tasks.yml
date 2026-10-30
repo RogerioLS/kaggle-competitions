@@ -8,11 +8,11 @@ on:
       - '.github/issues/**'
       - '.github/scripts/setup_kanban.py'
       - '.github/workflows/setup_tasks.yml'
-  pull_request:
-    types: [closed]
-    branches:
-      - main
   workflow_dispatch:
+
+concurrency:
+  group: setup-kanban
+  cancel-in-progress: false
 
 permissions:
   issues: write
@@ -21,7 +21,6 @@ permissions:
 jobs:
   setup-kanban:
     name: Setup Milestones, Labels and Issues
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
