@@ -34,7 +34,8 @@
 | :--- | :---: | :--- |
 | **Current #1 (Gold)** | **0.24** (24%) | Leading competitor on Kaggle Public Leaderboard |
 | **Top 2 – 6 (Gold/Silver)** | **0.17 – 0.22** | Clustered prompt-engineering & basic grep agents |
-| 🚀 **Our Standing (v4.0)** | 🟢 **0.13** (13%) | **Official Public Score (Ref `57739851` \| Rank #2585 / 4105 teams)** |
+| 🚀 **Our Standing (v5.0)** | 🟢 **0.17** (17%) | **Official Public Score (Ref `57777062` \| Gold/Silver Cluster Tier)** |
+| Previous Standing (v4.0) | 🟢 **0.13** (13%) | Official Public Score (Ref `57739851` \| Rank #2585 / 4105 teams) |
 | **Naive Baseline** | **~0.00 – 0.10** | Empty patches or unstructured conversational agents |
 | 🎯 **Our Target** | **> 0.25+** | **Leaderboard Top 1 + NeurIPS Paper Presentation** |
 

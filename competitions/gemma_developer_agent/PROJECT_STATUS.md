@@ -1,11 +1,11 @@
 # 📋 Status Geral do Projeto e Guia de Retomada (Handoff)
 
-> **Data de Atualização:** 29 de Outubro de 2026  
+> **Data de Atualização:** 30 de Outubro de 2026  
 > **Repositório:** `RogerioLS/kaggle-competitions`  
 > **Branch Atual:** `feat/task-14-golden-trajectories-and-lora`  
-> **Status de Qualidade:** 🟢 123/123 Testes Unitários Passando | Clean Chassis Compliant  
-> **Score Oficial no Kaggle:** 🟢 **0.13** (Ref: `57739851` | 78.400 bytes gerados | Rank #2585 / 4105)  
-> **Submissão Recente Ativa:** 🟡 **Ref: `57777062`** (Status: `PENDING` | Submissão v5.0 TASK-13)  
+> **Status de Qualidade:** 🟢 124/124 Testes Unitários Passando | Clean Chassis Compliant  
+> **Score Oficial no Kaggle:** 🟢 **0.17** 🏆 (Ref: `57777062` | Submissão v5.0 TASK-13 | +30.7% relativo sobre 0.13)  
+> **Histórico de Submissões:** v4.0 (`0.13`) ➡️ v5.0 (`0.17`)  
 
 ---
 
@@ -107,14 +107,15 @@ Todas as **13 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 
 ---
 
-### Submissão v5.0 (29/10/2026) — 🚀 EM AVALIAÇÃO (TASK-13)
+### Submissão v5.0 (29/10/2026) — 🏆 SCORE OFICIAL: 0.17 (TASK-13)
 * **ID no Kaggle (`ref`):** `57777062`
-* **Status no Avaliador Oficial Kaggle:** 🟡 `SubmissionStatus.PENDING`
-* **Data de Envio:** 29/10/2026 16:39:51 UTC
-* **Pacote Submetido (`submission.zip`):** `10.765 bytes`, 14 arquivos validados (`SHA256: 51685c70378357f307363f90baf8e8d14c020bf0962c5cad42ad6c6768b7227d`).
-* **Inovações Testadas nesta Submissão:**
-  1. **Heurísticas dos 18 Hotspots Dourados**: Mapeamento semântico direto nos sub-agentes (`explorer.md`, `locator.md`, `system.md`) para os arquivos que cobrem 77.5% das tarefas do benchmark (com destaque para `fastapi/dependencies/utils.py` cobrindo 40.3% do FastAPI).
-  2. **Protocolo de Resiliência Cirúrgica (`drafter.md`)**: Re-leitura obrigatória com janela de 30 linhas em caso de falha de string matching no `edit_file`.
+* **Status no Avaliador Oficial Kaggle:** 🟢 `SubmissionStatus.COMPLETE`
+* **Public Score Oficial:** **`0.17`** (+30.7% de evolução sobre a baseline de 0.13)
+* **Data de Envio:** 29/10/2026 16:39:51 UTC | **Conclusão:** 30/10/2026 16:50 UTC
+* **Pacote Submetido (`submission.zip`):** `10.765 bytes`, 14 arquivos validados (`SHA256: 6e6eee81b2d19579...`).
+* **Inovações Consolidadas com Sucesso nesta Submissão:**
+  1. **Heurísticas dos 18 Hotspots Dourados**: Mapeamento semântico direto nos sub-agentes (`explorer.md`, `locator.md`, `system.md`) para os arquivos que cobrem 77.5% das tarefas do benchmark.
+  2. **Protocolo de Resiliência Cirúrgica (`drafter.md`)**: Re-leitura obrigatória em caso de falha de string matching no `edit_file`.
   3. **Orçamentos Calibrados (`eval_config.yaml`)**: `max_tool_calls: 35`, `max_turns: 40`, `max_time_minutes: 7`.
 
 ---
