@@ -12,6 +12,7 @@ Authentication priority:
 3. gh CLI auth token
 """
 
+import argparse
 import json
 import os
 import re
@@ -21,6 +22,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+import yaml
 
 REPO = "RogerioLS/kaggle-competitions"
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -100,6 +103,10 @@ def setup_milestones(token: str) -> Dict[str, int]:
             "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
             "Submission.zip builder, Gemma 4 LoRA fine-tuning, and NeurIPS paper.",
         ),
+        (
+            "05. Empirical Hotspots & Golden Trajectories Post-Training",
+            "Empirical SWE-bench priors, 129 golden trajectories, and specialized PEFT LoRA.",
+        ),
     ]
 
     for title, desc in milestones_def:
@@ -136,6 +143,9 @@ def setup_labels(token: str) -> None:
         ("priority: high", "b91c1c", "Prioridade Alta / Bloqueante"),
         ("priority: medium", "f59e0b", "Prioridade Média"),
         ("priority: low", "10b981", "Prioridade Baixa"),
+        ("area: security", "e11d21", "Vulnerabilidades e segurança"),
+        ("area: infra", "0052cc", "Infraestrutura CI/CD e automação"),
+        ("deps", "0366d6", "Dependências de pacotes e actions"),
     ]
 
     for name, color, desc in labels_def:
@@ -148,11 +158,13 @@ def setup_labels(token: str) -> None:
                 print(f"  ➕ Created Label: {name}")
 
 
-def setup_tasks(token: str, milestone_map: Dict[str, int]) -> None:
-    """Creates or updates issues on GitHub from .github/issues/*.md."""
-    print("📋 Setting up Tasks & Issues on GitHub...")
+def setup_tasks(token: str, milestone_map: Dict[str, int], dry_run: bool = False) -> None:
+    """Creates or updates issues on GitHub dynamically from .github/issues/*.md."""
+    print("📋 Setting up Tasks & Issues on GitHub dynamically from .github/issues/...")
     url = f"https://api.github.com/repos/{REPO}/issues"
-    existing_issues = api_request(f"{url}?state=all&per_page=100", token=token) or []
+    existing_issues = []
+    if not dry_run and token:
+        existing_issues = api_request(f"{url}?state=all&per_page=100", token=token) or []
 
     # Map title prefix / ID to existing issue number
     existing_map = {}
@@ -162,108 +174,52 @@ def setup_tasks(token: str, milestone_map: Dict[str, int]) -> None:
         if match:
             existing_map[match.group(1)] = issue["number"]
 
-    task_definitions = [
-        {
-            "id": "TASK-01",
-            "title": "[TASK-01] Project Initialization and Architecture Scaffolding",
-            "file": "task-01-scaffold.md",
-            "milestone": "01. Ingestion & Local Benchmark Harness",
-            "labels": ["area: competition", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-02",
-            "title": "[TASK-02] Gemma 4 Competition Ingestion & Dataset Preparation",
-            "file": "task-02-competition-spec-and-dataset.md",
-            "milestone": "01. Ingestion & Local Benchmark Harness",
-            "labels": ["area: competition", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-03",
-            "title": "[TASK-03] Local SWE-bench Evaluation Harness & Benchmark Sandbox",
-            "file": "task-03-local-swebench-harness.md",
-            "milestone": "01. Ingestion & Local Benchmark Harness",
-            "labels": ["area: harness", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-04",
-            "title": "[TASK-04] Declarative Agent Architecture & Structured Prompts",
-            "file": "task-04-declarative-agent-baseline.md",
-            "milestone": "02. Declarative ADK Agent & Prompt Architecture",
-            "labels": ["area: agent", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-05",
-            "title": "[TASK-05] Kaggle Submission Pipeline, Validator & Dry-Run",
-            "file": "task-05-submission-pipeline-and-dryrun.md",
-            "milestone": "03. Test-Driven Closed Loop & Code-Graphs",
-            "labels": ["area: submission", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-06",
-            "title": "[TASK-06] Gemma 4 Post-Training & LoRA Adapter Pipeline",
-            "file": "task-06-lora-posttraining-pipeline.md",
-            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
-            "labels": ["area: lora", "type: feature", "priority: medium"],
-        },
-        {
-            "id": "TASK-07",
-            "title": (
-                "[TASK-07] Kaggle Code Submission Automation, Offline Kernel & Pipeline Maestro"
-            ),
-            "file": "task-07-kaggle-submission-and-kernel.md",
-            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
-            "labels": ["area: submission", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-08",
-            "title": ("[TASK-08] GitHub-to-Kaggle Dataset Sync Automation & CI/CD Pipeline"),
-            "file": "task-08-kaggle-dataset-sync.md",
-            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
-            "labels": ["area: competition", "area: submission", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-09",
-            "title": ("[TASK-09] Gemma 4 Autonomous ReAct Engine & Dynamic Tool-Calling Loop"),
-            "file": "task-09-gemma4-react-engine.md",
-            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
-            "labels": ["area: agent", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-10",
-            "title": ("[TASK-10] Interactive Kaggle GPU Evaluation Notebook & Benchmark Telemetry"),
-            "file": "task-10-kaggle-evaluation-notebook.md",
-            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
-            "labels": ["area: harness", "area: competition", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-11",
-            "title": (
-                "[TASK-11] Submission v3.0 Prompt Hardening, Budget Calibration "
-                "& Resilient JSON Parser"
-            ),
-            "file": "task-11-prompt-hardening-and-resilient-parser.md",
-            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
-            "labels": ["area: agent", "area: submission", "type: feature", "priority: high"],
-        },
-        {
-            "id": "TASK-12",
-            "title": (
-                "[TASK-12] Submission v4.0 Official swegemma & adk-submission " "Contract Alignment"
-            ),
-            "file": "task-12-swegemma-adk-schema-alignment.md",
-            "milestone": "04. Kaggle Submission Pipeline, LoRA Training & Paper Track",
-            "labels": ["area: agent", "area: submission", "type: feature", "priority: high"],
-        },
-    ]
+    md_files = sorted(ISSUES_DIR.glob("task-*.md"))
+    print(f"  🔍 Found {len(md_files)} task specification files in {ISSUES_DIR}")
 
-    for task in task_definitions:
-        task_id = task["id"]
-        title = task["title"]
-        ms_title = task["milestone"]
-        ms_number = milestone_map.get(ms_title)
-        labels = task["labels"]
-        file_path = ISSUES_DIR / task["file"]
-        body = file_path.read_text(encoding="utf-8") if file_path.exists() else f"# {title}\n"
+    for md_file in md_files:
+        content = md_file.read_text(encoding="utf-8")
+        parts = content.split("---", 2)
+        if len(parts) >= 3:
+            try:
+                fm = yaml.safe_load(parts[1]) or {}
+            except Exception:
+                fm = {}
+            body = parts[2].strip()
+        else:
+            fm = {}
+            body = content.strip()
+
+        task_id = fm.get("id")
+        if not task_id:
+            m = re.search(r"task-(\d+)", md_file.name)
+            task_id = f"TASK-{m.group(1)}" if m else md_file.stem.upper()
+
+        raw_title = fm.get("title", md_file.stem)
+        title = (
+            f"[{task_id}] {raw_title}" if not raw_title.startswith(f"[{task_id}]") else raw_title
+        )
+
+        milestone_ref = fm.get("milestone")
+        ms_number = None
+        if milestone_ref is not None:
+            ms_prefix = (
+                f"{int(milestone_ref):02d}." if str(milestone_ref).isdigit() else str(milestone_ref)
+            )
+            for ms_title, ms_num in milestone_map.items():
+                if ms_title.startswith(ms_prefix) or ms_title == str(milestone_ref):
+                    ms_number = ms_num
+                    break
+
+        area = str(fm.get("area", "agent"))
+        clean_area = area.replace("competition/gemma-developer-agent", "agent")
+        task_type = fm.get("type", "feature")
+        labels = [f"area: {clean_area}", f"type: {task_type}", "priority: high"]
+
+        if dry_run:
+            status = f"UPDATE #{existing_map[task_id]}" if task_id in existing_map else "CREATE"
+            print(f"  [DRY-RUN] [{status}] {title} " f"(Milestone: {ms_number}, Labels: {labels})")
+            continue
 
         if task_id in existing_map:
             iss_num = existing_map[task_id]
@@ -290,13 +246,34 @@ def setup_tasks(token: str, milestone_map: Dict[str, int]) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="GitHub Kanban & Issue Setup Automation")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Simulate execution without modifying GitHub",
+    )
+    args = parser.parse_args()
+
     print("==================================================")
     print(" 🚀 KAGGLE COMPETITIONS — GITHUB KANBAN SETUP     ")
     print("==================================================")
-    token = get_token()
-    milestone_map = setup_milestones(token)
-    setup_labels(token)
-    setup_tasks(token, milestone_map)
+    if args.dry_run:
+        print("🔍 Running in DRY-RUN mode (read-only simulation)...")
+        token = ""
+        milestone_map = {
+            "01. Ingestion & Local Benchmark Harness": 1,
+            "02. Declarative ADK Agent & Prompt Architecture": 2,
+            "03. Test-Driven Closed Loop & Code-Graphs": 3,
+            "04. Kaggle Submission Pipeline, LoRA Training & Paper Track": 4,
+            "05. Empirical Hotspots & Golden Trajectories Post-Training": 5,
+        }
+        setup_tasks(token, milestone_map, dry_run=True)
+    else:
+        token = get_token()
+        milestone_map = setup_milestones(token)
+        setup_labels(token)
+        setup_tasks(token, milestone_map, dry_run=False)
+
     print("==================================================")
     print(" ✅ SETUP DO KANBAN E ISSUES FINALIZADO COM SUCESSO! ")
     print("==================================================")

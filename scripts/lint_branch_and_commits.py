@@ -48,6 +48,8 @@ def validate_branch(branch_name: str) -> Tuple[bool, str]:
     clean_branch = branch_name.replace("refs/heads/", "").strip()
     if clean_branch in {"main", "master", "develop"}:
         return True, ""
+    if clean_branch.startswith("dependabot/"):
+        return True, ""
     if BRANCH_REGEX.match(clean_branch):
         return True, ""
     error_msg = (
@@ -76,7 +78,18 @@ def get_pr_commits(base_ref: str) -> List[str]:
 
 def validate_commit(commit_msg: str) -> Tuple[bool, str]:
     """Validates an individual commit message against conventional rules."""
-    if any(commit_msg.startswith(prefix) for prefix in ("Merge ", "Revert ", "v")):
+    if any(
+        commit_msg.startswith(prefix)
+        for prefix in (
+            "Merge ",
+            "Revert ",
+            "v",
+            "chore(deps",
+            "ci(deps",
+            "build(deps",
+            "Bump ",
+        )
+    ):
         return True, ""
 
     match = COMMIT_REGEX.match(commit_msg)
