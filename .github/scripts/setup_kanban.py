@@ -166,13 +166,13 @@ def setup_tasks(token: str, milestone_map: Dict[str, int], dry_run: bool = False
     if not dry_run and token:
         existing_issues = api_request(f"{url}?state=all&per_page=100", token=token) or []
 
-    # Map title prefix / ID to existing issue number
-    existing_map = {}
+    # Map title prefix / ID to existing issue numbers (handles duplicates automatically)
+    existing_map: Dict[str, list] = {}
     for issue in existing_issues:
         title = issue.get("title", "")
         match = re.search(r"\[(TASK-\d+)\]", title)
         if match:
-            existing_map[match.group(1)] = issue["number"]
+            existing_map.setdefault(match.group(1), []).append(issue["number"])
 
     md_files = sorted(ISSUES_DIR.glob("task-*.md"))
     print(f"  🔍 Found {len(md_files)} task specification files in {ISSUES_DIR}")
@@ -216,30 +216,56 @@ def setup_tasks(token: str, milestone_map: Dict[str, int], dry_run: bool = False
         task_type = fm.get("type", "feature")
         labels = [f"area: {clean_area}", f"type: {task_type}", "priority: high"]
 
+        # Check Definition of Done: auto-close if all checkboxes are completed
+        dones = re.findall(r"- \[(.)\]", body)
+        all_completed = len(dones) > 0 and all(d.lower() == "x" for d in dones)
+        desired_state = "closed" if all_completed else "open"
+        state_reason = "completed" if all_completed else None
+
         if dry_run:
             status = f"UPDATE #{existing_map[task_id]}" if task_id in existing_map else "CREATE"
-            print(f"  [DRY-RUN] [{status}] {title} " f"(Milestone: {ms_number}, Labels: {labels})")
+            print(
+                f"  [DRY-RUN] [{status}] {title} (State: {desired_state}, "
+                f"Milestone: {ms_number}, Labels: {labels})"
+            )
             continue
 
         if task_id in existing_map:
-            iss_num = existing_map[task_id]
-            print(f"  🔄 Updating existing Issue #{iss_num}: {title}")
-            edit_url = f"https://api.github.com/repos/{REPO}/issues/{iss_num}"
+            issue_nums = existing_map[task_id]
+            primary_num = issue_nums[0]
+            print(f"  🔄 Updating existing Issue #{primary_num} (State: {desired_state}): {title}")
+            edit_url = f"https://api.github.com/repos/{REPO}/issues/{primary_num}"
             payload = {
                 "title": title,
                 "body": body,
                 "milestone": ms_number,
                 "labels": labels,
+                "state": desired_state,
             }
+            if state_reason:
+                payload["state_reason"] = state_reason
             api_request(edit_url, method="PATCH", data=payload, token=token)
+
+            # Auto-close any duplicate issues created by parallel triggers
+            for dup_num in issue_nums[1:]:
+                print(f"  🧹 Auto-closing duplicate Issue #{dup_num} as not_planned...")
+                dup_url = f"https://api.github.com/repos/{REPO}/issues/{dup_num}"
+                dup_payload = {
+                    "state": "closed",
+                    "state_reason": "not_planned",
+                }
+                api_request(dup_url, method="PATCH", data=dup_payload, token=token)
         else:
-            print(f"  ➕ Creating new Issue: {title}")
+            print(f"  ➕ Creating new Issue: {title} (State: {desired_state})")
             payload = {
                 "title": title,
                 "body": body,
                 "milestone": ms_number,
                 "labels": labels,
+                "state": desired_state,
             }
+            if state_reason:
+                payload["state_reason"] = state_reason
             res = api_request(url, method="POST", data=payload, token=token)
             if res and "number" in res:
                 print(f"     -> Created Issue #{res['number']} successfully!")
