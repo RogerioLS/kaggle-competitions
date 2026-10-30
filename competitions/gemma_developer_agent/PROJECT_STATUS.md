@@ -34,8 +34,8 @@ Todas as **13 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 | **[TASK-10.7]** | Kaggle Offline Resilience & Hidden Dataset Sync | [#26](https://github.com/RogerioLS/kaggle-competitions/issues/26) | PR [#43](https://github.com/RogerioLS/kaggle-competitions/pull/43) | 🟢 `main` |
 | **[TASK-11]** | Submission v3.0 Prompt Hardening, Budget Calibration & Resilient JSON Parser | [#50](https://github.com/RogerioLS/kaggle-competitions/issues/50) | PR [#46](https://github.com/RogerioLS/kaggle-competitions/pull/46), [#47](https://github.com/RogerioLS/kaggle-competitions/pull/47), [#48](https://github.com/RogerioLS/kaggle-competitions/pull/48), [#49](https://github.com/RogerioLS/kaggle-competitions/pull/49) | 🟢 `main` |
 | **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | [#53](https://github.com/RogerioLS/kaggle-competitions/issues/53) | PR [#54](https://github.com/RogerioLS/kaggle-competitions/pull/54) | 🟢 `main` |
-| **[TASK-13]** | Empirical Hotspot Priors, Localization & Surgical Resiliency | [#59](https://github.com/RogerioLS/kaggle-competitions/issues/59) | PR [#56](https://github.com/RogerioLS/kaggle-competitions/pull/56) | 🟢 `main` |
-| **[TASK-14]** | Ground-Truth Trajectory Extraction & LoRA Fine-Tuning Pipeline | `Auto-Issue on Merge` | PR [Pending Merge] | 🟢 Ready for Merge |
+| **[TASK-13]** | Empirical Hotspot Priors, Localization & Surgical Resiliency | [#60](https://github.com/RogerioLS/kaggle-competitions/issues/60) | PR [#56](https://github.com/RogerioLS/kaggle-competitions/pull/56) | 🟢 `main` |
+| **[TASK-14]** | Ground-Truth Trajectory Extraction & LoRA Fine-Tuning Pipeline | [#62](https://github.com/RogerioLS/kaggle-competitions/issues/62) | PR [#63](https://github.com/RogerioLS/kaggle-competitions/pull/63) | 🟢 `main` |
 
 ---
 
