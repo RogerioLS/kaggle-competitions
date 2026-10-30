@@ -36,6 +36,7 @@ Todas as **13 Tasks** planejadas para o desafio **Google Gemma 4 Developer Agent
 | **[TASK-12]** | Submission v4.0 Official swegemma & adk-submission Contract Alignment | [#53](https://github.com/RogerioLS/kaggle-competitions/issues/53) | PR [#54](https://github.com/RogerioLS/kaggle-competitions/pull/54) | 🟢 `main` |
 | **[TASK-13]** | Empirical Hotspot Priors, Localization & Surgical Resiliency | [#60](https://github.com/RogerioLS/kaggle-competitions/issues/60) | PR [#56](https://github.com/RogerioLS/kaggle-competitions/pull/56) | 🟢 `main` |
 | **[TASK-14]** | Ground-Truth Trajectory Extraction & LoRA Fine-Tuning Pipeline | [#62](https://github.com/RogerioLS/kaggle-competitions/issues/62) | PR [#63](https://github.com/RogerioLS/kaggle-competitions/pull/63) | 🟢 `main` |
+| **[TASK-15]** | Multi-File Surgery, Path Normalization & Submission v6.0 Preparation | [#66](https://github.com/RogerioLS/kaggle-competitions/issues/66) | [Branch `feat/task-15`](https://github.com/RogerioLS/kaggle-competitions/tree/feat/task-15-multi-file-surgery-and-v6-prep) | 🟡 Em Andamento |
 
 ---
 
@@ -197,28 +198,43 @@ Com a validação oficial da v4.0 no Leaderboard (`Pass@1 = 0.13`), a infraestru
 * 🥇 **Top 1 a Top 6:** `0.24` (24% de resolução)
 * 🥈 **Top 290:** `>= 0.20` (20% - 22%)
 * 🥉 **Threshold Mediano:** `0.15`
-* 🚀 **Nossa Posição Atual (v4.0):** **`0.13`** (Atingido com modelo base sem LoRA e orçamento conservador de 25 tools / 5 min).
+* 🚀 **Nossa Posição Atual (v5.0):** **`0.17`** (17% de resolução | Ref: `57777062` | +30.7% relativo sobre a baseline de 0.13).
+* 🥇 **Líder Atual da Competição (Top 1):** **`0.24`** (24% de resolução).
+* 🎯 **A Distância do Top 1:** Em um conjunto oculto de 75 a 100 tarefas, **faltam converter apenas 5 a 7 tarefas** para disputar a medalha de ouro!
 
-Para escalar de `0.13` para `>= 0.20+` e entrar no Top Tier global, os 3 pilares de evolução identificados são:
+---
 
-### Pilar 1: TASK-13: Injeção de Priors dos Hotspots & Calibração de Orçamento (Imediato)
-- **Heurísticas de Localização nos Sub-Agentes (`prompts/explorer.md`, `prompts/locator.md`):**
-  - Como 77.5% dos bugs residem em apenas 18 arquivos (com `fastapi/dependencies/utils.py` cobrindo 40.3% de FastAPI sozinho), os sub-agentes recebem priors declarativos para inspecionar os arquivos hotspot diretamente ao identificar termos correlacionados (params, headers, validation, query, cells, markdown, segment).
-  - Reduz drasticamente as buscas cegas e navegações em diretórios desnecessários (`docs/`, `examples/`).
-- **Aumento Calibrado do Orçamento (`eval_config.yaml`):**
-  - Nosso `eval_config.yaml` da v4.0 usou `max_tool_calls: 25`, `max_turns: 30` e `max_time_minutes: 5`.
-  - Subir para `max_tool_calls: 35`, `max_turns: 40` e `max_time_minutes: 7` dá fôlego para tarefas que tocam 2 arquivos ou que demandam re-leitura de contexto.
+## 🎯 Roadmap Estratégico: Da v5.0 (0.17) ao Top 1 (0.24+)
 
-### Pilar 2: TASK-06: Fine-Tuning de Adaptadores LoRA Especializados (`adapters/main_lora/`)
-- **Pipeline de Treinamento PEFT LoRA (`training/lora_trainer.py`):**
-  - Treinar o Gemma 4 em pares de código construídos a partir das 129 tarefas gabarito e instâncias públicas do SWE-bench Verified.
-  - Adaptador PEFT leve (`r=16` ou `r=32`, $\approx 150$ a $300$ MB) empacotado em `adapters/main_lora/` e servido nativamente pelo vLLM do Kaggle (`--lora-modules main_lora=...`).
-- **Geração de Trajetórias com Trajectory Collector (`training/trajectory_collector.py`):**
-  - Ensinar o modelo a emitir `<|tool_call>` diretos de localização e edição cirúrgica em menos de 4 turnos.
+Com base na auditoria profunda conduzida por agentes especialistas na "parte fina do funil", os 4 pilares cirúrgicos da **TASK-15** são:
 
-### Pilar 3: Resiliência Cirúrgica de `edit_file` e Anti-Alucinação de Whitespace
-- Se `edit_file` reportar `String not found`, proibir tentativas cegas com espaços alucinados: o agente deve imediatamente executar `read_file` na janela exata para re-sincronizar caracteres antes de re-tentar a edição.
-- Proibição estrita de tocar em arquivos de teste (`tests/*`) e configurações de ambiente (`pytest.ini`, `conftest.py`).
+### Pilar 1: Suporte a Cirurgia em 2 Arquivos no `drafter.md` (Gargalo de 14.7%)
+- **Evidência Empírica:** 14.7% (19/129) das tarefas do benchmark tocam exatamente 2 arquivos complementares (ex: `models.py` + `_types.py` no Requests; ou `utils.py` + `_compat/v2.py` no FastAPI).
+- **Ação:** O `drafter` não deve chamar `submit_patch` prematuramente após o primeiro edit se a issue apontar dependência entre tipos e implementações; ele coordena a edição do segundo arquivo antes da submissão.
+- **Potencial de Ganho:** +3 a 5 tarefas convertidas.
+
+### Pilar 2: Normalização de Caminhos e Fallback Bidirecional (`src/` vs Plano)
+- **Evidência Empírica:** 89.15% das tarefas têm layout plano (`fastapi/`, `rich/`). Apenas 10.85% usam `src/`. Na Célula 4, vimos que o `requests_7505` gastou 45.5 segundos com `FileNotFound` no Turno 1 por tentar `src/requests/models.py`.
+- **Ação:** Regra reflexiva imediata no `explorer.md` e `locator.md`: *"Se o arquivo procurado não existir na raiz, inspecione imediatamente em `src/<pkg>/` e vice-versa"*.
+- **Potencial de Ganho:** Economiza 1 turno e ~45s em tarefas de `requests` e `httpx`, evitando timeouts.
+
+### Pilar 3: Syntax Gatekeeper Ultrarrápido (`python3 -m py_compile`)
+- **Evidência Empírica:** Rodar `pytest` full gera timeout (causa dos scores 0.00 nas v2 e v3). Mas submeter 100% cego arrisca reprovação imediata por um `IndentationError` de 1 espaço.
+- **Ação:** No `validator.md`, antes de chamar `submit_patch`, executar `run_command("python3 -m py_compile <filepath>")`. Leva 0.2s; se falhar, devolve a linha exata do erro para autocorreção imediata.
+- **Potencial de Ganho:** Elimina mortes súbitas no Container B (+1 a 2 tarefas).
+
+### Pilar 4: Envio de Símbolos AST para `search_similar_code`
+- **Evidência Empírica:** No Kaggle offline, `search_similar_code` consulta arquivos `.npz` estáticos de nós AST. Passar frases em linguagem natural falha. Passar identificadores de símbolos (`Session.send`, `HTTPAdapter`) tem acurácia de cosseno > 0.95.
+- **Ação:** Calibrar `explorer.md` para extrair nomes de classes, métodos e funções da issue e passá-los ao grafo AST.
+- **Potencial de Ganho:** Destrava a localização nos 22.5% de arquivos fora dos 18 hotspots (+2 a 3 tarefas).
+
+---
+
+## 🔬 Auditoria Técnica do LoRA (Por que foi pausado para a Fase 2)
+1. **Incompatibilidade de Tokenizer:** O dataset `golden_trajectories.jsonl` foi extraído com blocos Markdown ```` ```json ````. O avaliador oficial do Kaggle (`swegemma`) roda vLLM com `--tool-call-parser gemma4`, exigindo tags nativas `<|tool_call|>call:tool{...}<tool_call|>`. Treinar com Markdown JSON faria o modelo desaprender tool-calling nativo, derrubando o score para 0.00.
+2. **Arquitetura Correta para a Fase 2:**
+   - Reestruturar o `trajectory_collector.py` com o template nativo do Gemma 4.
+   - Aplicar LoRA exclusivamente no sub-agente `drafter` (`adapters/drafter_lora/`) como especialista de diffs cirúrgicos, mantendo o agente raiz puro no modelo base oficial.
 
 ---
 
@@ -229,23 +245,32 @@ Para escalar de `0.13` para `>= 0.20+` e entrar no Top Tier global, os 3 pilares
   1. Bloqueio de exclusão de branch (`deletion: true`).
   2. Bloqueio de force-push (`non_fast_forward: true`).
   3. Status Checks obrigatórios antes do merge:
-     - `Make Audit & Report` (120 testes, flake8, ruff, black, isort).
+     - `Make Audit & Report` (124 testes, flake8, ruff, black, isort).
      - `Validate Branch & Task Format` (`lint_branch_and_commits.py`).
+  4. Automações Ativas:
+     - `@github-actions[bot]`: Sincronização automática e fechamento de tasks por checklist.
+     - `@dependabot[bot]`: Verificação semanal de dependências Python e GitHub Actions.
 
 ---
 
-## 🚦 Como Retomar o Trabalho Imediatamente
+## 🚦 Como Retomar o Trabalho Imediatamente (Guia de Handoff)
 
-Ao reiniciar o terminal ou abrir nova sessão:
+Ao reiniciar o computador ou abrir uma nova sessão:
 
 ```bash
 # 1. Navegar até o diretório do projeto
 cd /mnt/c/Users/rogerio.silva/projetos/espec-42/kaggle-competitions
 
-# 2. Confirmar que está na branch main e sincronizada
-git status
-git pull origin main
+# 2. Atualizar o repositório local com a branch de trabalho
+git checkout feat/task-15-multi-file-surgery-and-v6-prep
+git pull origin feat/task-15-multi-file-surgery-and-v6-prep
 
-# 3. Rodar a auditoria completa de saúde (deve passar 120/120)
+# 3. Executar a suíte de testes (deve passar 124/124 testes)
 pytest
+
+# 4. Iniciar a implementação dos 4 prompts da TASK-15:
+#    - prompts/drafter.md (Suporte a 2 arquivos)
+#    - prompts/explorer.md (Fallback de paths e símbolos AST)
+#    - prompts/locator.md (Fallback de paths)
+#    - prompts/validator.md (Syntax gatekeeper py_compile)
 ```
