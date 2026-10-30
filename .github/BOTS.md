@@ -12,3 +12,13 @@ This repository uses automated bots to maintain continuous integration, issue sy
   - Automatic task issue creation on merge to `main`.
   - Automated issue closure on Definition of Done completion (`- [x]`).
   - Idempotent milestone, label, and duplicate issue governance.
+
+---
+
+## 2. 📦 Dependabot (`@dependabot[bot]`)
+* **Role:** Automated Dependency & Vulnerability Governance
+* **Identity:** `49699333+dependabot[bot]@users.noreply.github.com`
+* **Responsibilities:**
+  - Weekly dependency freshness scans for Python (`pip` / `pyproject.toml`).
+  - GitHub Actions version updates and security advisory monitoring.
+  - Institutional conventional commits with `chore(deps):` and `ci(deps):`.
