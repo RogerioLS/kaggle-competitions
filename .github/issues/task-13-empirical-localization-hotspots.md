@@ -4,7 +4,7 @@ title: "Empirical Hotspot Priors, Localization & Surgical Resiliency"
 area: competition/gemma-developer-agent
 type: feature
 milestone: 5
-github_issue: 55
+github_issue: 60
 ---
 
 ## 🎯 Task Objective

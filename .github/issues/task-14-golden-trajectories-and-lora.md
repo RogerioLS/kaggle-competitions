@@ -4,7 +4,7 @@ title: "Ground-Truth Trajectory Extraction & LoRA Fine-Tuning Pipeline"
 area: competition/gemma-developer-agent
 type: feature
 milestone: 5
-github_issue: 57
+github_issue: 62
 ---
 
 ## 🎯 Task Objective
