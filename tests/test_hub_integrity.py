@@ -80,3 +80,23 @@ def test_auto_discover_dry_run() -> None:
     assert res.returncode == 0
     assert "KAGGLE HUB AUTONOMOUS DISCOVERY ENGINE" in res.stdout
     assert "Git hooks installed and verified" in res.stdout
+
+
+def test_governance_documentation_files_exist() -> None:
+    """Verifies standard governance files exist in the repository root."""
+    assert (HUB_ROOT / "SECURITY.md").is_file()
+    assert (HUB_ROOT / "CODE_OF_CONDUCT.md").is_file()
+    assert (HUB_ROOT / "CONTRIBUTING.md").is_file()
+    assert (HUB_ROOT / "CHANGELOG.md").is_file()
+
+
+def test_update_changelog_check() -> None:
+    """Verifies update_changelog.py --check scans submodules and exits 0."""
+    res = subprocess.run(
+        [sys.executable, str(HUB_ROOT / "scripts" / "update_changelog.py"), "--check"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert res.returncode == 0
+    assert "AI CHANGELOG & MILESTONE SYNTHESIZER" in res.stdout

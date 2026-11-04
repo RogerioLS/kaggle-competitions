@@ -18,7 +18,7 @@ MAGENTA := \033[35m
 BLUE    := \033[34m
 WHITE   := \033[97m
 
-.PHONY: help install status sync add discover summary check clean onboarding pr test
+.PHONY: help install status sync add discover changelog summary check clean onboarding pr test
 
 help:
 	@printf "$(CYAN)┌──────────────────────────────────────────────────────────────────────────────┐\n$(RESET)"
@@ -28,6 +28,8 @@ help:
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make status$(RESET)     $(DIM)─$(RESET) Display health status & branches of all submodules        $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make sync$(RESET)       $(DIM)─$(RESET) Pull latest remote commits across all submodules          $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make add$(RESET)        $(DIM)─$(RESET) Register existing repo as next submodule (02_, 03_...)    $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make discover$(RESET)   $(DIM)─$(RESET) Auto-discover and register uncataloged 'kaggle-*' repos   $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make changelog$(RESET)  $(DIM)─$(RESET) AI milestone synthesis & CHANGELOG.md curation          $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make summary$(RESET)    $(DIM)─$(RESET) Generate visual portfolio audit report (summary.md)       $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make test$(RESET)       $(DIM)─$(RESET) Run automated integrity test suite via pytest             $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make check$(RESET)      $(DIM)─$(RESET) Run syntax validation across all automation scripts       $(CYAN)│\n$(RESET)"
@@ -55,6 +57,9 @@ add:
 
 discover:
 	@$(PYTHON) scripts/auto_discover_competitions.py $(ARGS)
+
+changelog:
+	@$(PYTHON) scripts/update_changelog.py $(ARGS)
 
 summary:
 	@$(PYTHON) scripts/generate_summary.py
