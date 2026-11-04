@@ -1,5 +1,8 @@
 # 🏆 Kaggle Competitions Portfolio & AI Engineering Hub
 
+[![Hub Audit & Quality Gate](https://github.com/RogerioLS/kaggle-competitions/actions/workflows/audit.yml/badge.svg)](https://github.com/RogerioLS/kaggle-competitions/actions/workflows/audit.yml)
+[![Branch & Commit Gate](https://github.com/RogerioLS/kaggle-competitions/actions/workflows/branch_lint.yml/badge.svg)](https://github.com/RogerioLS/kaggle-competitions/actions/workflows/branch_lint.yml)
+[![Submodules Upstream Sync](https://github.com/RogerioLS/kaggle-competitions/actions/workflows/submodule_sync.yml/badge.svg)](https://github.com/RogerioLS/kaggle-competitions/actions/workflows/submodule_sync.yml)
 [![Kaggle Profile](https://img.shields.io/badge/Kaggle-Profile-20beff?logo=kaggle&logoColor=white)](https://www.kaggle.com/rogeriolopesdasilva)
 [![Clean Chassis](https://img.shields.io/badge/Powered%20by-Clean%20Chassis-brightgreen.svg)](https://github.com/RogerioLS/clean-chassis)
 [![Architecture: Submodules](https://img.shields.io/badge/architecture-git%20submodules-orange.svg)](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
