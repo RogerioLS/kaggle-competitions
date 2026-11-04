@@ -60,5 +60,23 @@ def test_github_workflows_and_templates_exist() -> None:
     assert (workflows_dir / "audit.yml").is_file()
     assert (workflows_dir / "branch_lint.yml").is_file()
     assert (workflows_dir / "submodule_sync.yml").is_file()
+    assert (workflows_dir / "auto_discover.yml").is_file()
     assert (HUB_ROOT / ".github" / "dependabot.yml").is_file()
     assert (HUB_ROOT / ".github" / "pull_request_template.md").is_file()
+
+
+def test_auto_discover_dry_run() -> None:
+    """Verifies auto_discover_competitions.py executes with code 0 in dry-run mode."""
+    res = subprocess.run(
+        [
+            sys.executable,
+            str(HUB_ROOT / "scripts" / "auto_discover_competitions.py"),
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert res.returncode == 0
+    assert "KAGGLE HUB AUTONOMOUS DISCOVERY ENGINE" in res.stdout
+    assert "Git hooks installed and verified" in res.stdout

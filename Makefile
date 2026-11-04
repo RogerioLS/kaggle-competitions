@@ -18,24 +18,24 @@ MAGENTA := \033[35m
 BLUE    := \033[34m
 WHITE   := \033[97m
 
-.PHONY: help install status sync add summary check clean onboarding pr test
+.PHONY: help install status sync add discover summary check clean onboarding pr test
 
 help:
 	@printf "$(CYAN)┌──────────────────────────────────────────────────────────────────────────────┐\n$(RESET)"
-	@printf "$(CYAN)│$(RESET) $(BOLD)$(MAGENTA)               KAGGLE COMPETITIONS HUB — COMMAND CENTER                     $(RESET) $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET) $(BOLD)$(MAGENTA)                   KAGGLE COMPETITIONS HUB — COMMAND CENTER                 $(RESET) $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)├──────────────────────────────────────────────────────────────────────────────┤\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make help$(RESET)       $(DIM)─$(RESET) Show this interactive command center                     $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make status$(RESET)     $(DIM)─$(RESET) Display health status & branches of all submodules       $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make sync$(RESET)       $(DIM)─$(RESET) Pull latest remote commits across all submodules         $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make add$(RESET)        $(DIM)─$(RESET) Register existing repo as next submodule (02_, 03_...)     $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make help$(RESET)       $(DIM)─$(RESET) Show this interactive command center                      $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make status$(RESET)     $(DIM)─$(RESET) Display health status & branches of all submodules        $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make sync$(RESET)       $(DIM)─$(RESET) Pull latest remote commits across all submodules          $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make add$(RESET)        $(DIM)─$(RESET) Register existing repo as next submodule (02_, 03_...)    $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make summary$(RESET)    $(DIM)─$(RESET) Generate visual portfolio audit report (summary.md)       $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make test$(RESET)       $(DIM)─$(RESET) Run automated integrity test suite via pytest             $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make check$(RESET)      $(DIM)─$(RESET) Run syntax validation across all automation scripts        $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make pr$(RESET)         $(DIM)─$(RESET) Create or update Pull Request with quality checklist       $(CYAN)│\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make install$(RESET)    $(DIM)─$(RESET) Configure local git hooks & conventional commit policies $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make check$(RESET)      $(DIM)─$(RESET) Run syntax validation across all automation scripts       $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make pr$(RESET)         $(DIM)─$(RESET) Create or update Pull Request with quality checklist      $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make install$(RESET)    $(DIM)─$(RESET) Configure local git hooks & conventional commit policies  $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make clean$(RESET)      $(DIM)─$(RESET) Clean temporary files, caches, and report artifacts       $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)├──────────────────────────────────────────────────────────────────────────────┤\n$(RESET)"
-	@printf "$(CYAN)│$(RESET)       $(BOLD)$(WHITE)🏆 Kaggle Competitions Hub • Federated Machine Learning Portfolio$(RESET)       $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)       $(BOLD)$(WHITE)🏆 Kaggle Competitions Hub • Federated Machine Learning Portfolio$(RESET)      $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)└──────────────────────────────────────────────────────────────────────────────┘\n$(RESET)"
 
 onboarding:
@@ -52,6 +52,9 @@ sync:
 
 add:
 	@$(PYTHON) scripts/add_competition.py $(ARGS)
+
+discover:
+	@$(PYTHON) scripts/auto_discover_competitions.py $(ARGS)
 
 summary:
 	@$(PYTHON) scripts/generate_summary.py
