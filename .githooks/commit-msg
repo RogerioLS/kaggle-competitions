@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# ==============================================================================
+#        CLEAN CHASSIS — GENERIC CONVENTIONAL TASK COMMIT LINTER HOOK
+# ==============================================================================
+
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(head -n 1 "$COMMIT_MSG_FILE")
+
+# Allow merge commits and rebase messages without validation
+if [[ "$COMMIT_MSG" =~ ^Merge ]] || [[ "$COMMIT_MSG" =~ ^Revert ]] || [[ "$COMMIT_MSG" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+    exit 0
+fi
+
+# Regex: <type>(<scope>): [<TASK-ID>:#<ISSUE_NUM>] <description> or with optional emoji prefix
+COMMIT_REGEX="^([^:]* )?(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9_\/-]+\))?:\s*(\[([a-zA-Z0-9_:#-]+)\])?\s*(.+)$"
+
+if ! [[ "$COMMIT_MSG" =~ $COMMIT_REGEX ]]; then
+    echo ""
+    echo "========================================================================"
+    echo " ⛔ COMMIT REJECTED: MESSAGE DOES NOT COMPLY WITH CHASSIS GOVERNANCE"
+    echo "========================================================================"
+    echo " ❌ Your message: \"$COMMIT_MSG\""
+    echo ""
+    echo " 📐 Required Format:"
+    echo "    <type>(<scope>): [<TASK-ID>:#<ISSUE_NUM>] <description in lowercase>"
+    echo "    or: <type>(<scope>): [<TASK-ID>] <description in lowercase>"
+    echo ""
+    echo " 📌 Valid Examples:"
+    echo "    feat(core): [TASK-01:#1] implement core calculation engine"
+    echo "    feat(api): [AUTH-02:#5] add jwt token validation"
+    echo "    docs(architecture): [DOCS] document clean chassis layers"
+    echo "    chore(ci): [INFRA] configure pre-commit and github actions"
+    echo ""
+    echo " 💡 Allowed Types:"
+    echo "    feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+    echo "========================================================================"
+    exit 1
+fi
+
+# Extract the Raw Task Tag inside brackets [TAG] (e.g. TASK-01:#1 or TASK-01)
+RAW_TASK_TAG="${BASH_REMATCH[5]}"
+TASK_TAG=$(echo "$RAW_TASK_TAG" | cut -d':' -f1)
+
+# Reserved global tags that don't need a matching file in .github/issues/
+RESERVED_TAGS=("INFRA" "CHORE" "DOCS" "FIX" "HOTFIX" "GLOBAL" "CONFIG" "SECURITY" "COMMUNITY" "DEPS" "RELEASE")
+
+if [ -n "$TASK_TAG" ]; then
+    UPPER_TAG=$(echo "$TASK_TAG" | tr '[:lower:]' '[:upper:]')
+
+    # Check if it's a reserved tag
+    for reserved in "${RESERVED_TAGS[@]}"; do
+        if [ "$UPPER_TAG" == "$reserved" ]; then
+            exit 0
+        fi
+    done
+
+    # Dynamic validation: Check if task exists in .github/issues/
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    ISSUES_DIR="$SCRIPT_DIR/../.github/issues"
+
+    LOWER_TAG=$(echo "$TASK_TAG" | tr '[:upper:]' '[:lower:]')
+    MATCHING_TASK=$(find "$ISSUES_DIR" -maxdepth 1 -iname "*${LOWER_TAG}*" 2>/dev/null | head -n 1)
+
+    if [ -z "$MATCHING_TASK" ] && [ -d "$ISSUES_DIR" ] && [ -n "$(ls -A "$ISSUES_DIR" 2>/dev/null)" ]; then
+        echo ""
+        echo "========================================================================"
+        echo " ⛔ COMMIT REJECTED: TASK ID NOT FOUND IN PROJECT"
+        echo "========================================================================"
+        echo " ❌ The task \"[$TASK_TAG]\" does not exist in .github/issues/."
+        echo ""
+        echo " 📋 Valid tasks found locally:"
+        for f in "$ISSUES_DIR"/*.md; do
+            if [ -f "$f" ]; then
+                BASENAME=$(basename "$f" .md)
+                echo "    - $BASENAME"
+            fi
+        done
+        echo ""
+        echo " 💡 What to do:"
+        echo "    1. Check the correct task ID in .github/issues/;"
+        echo "    2. If this is a new task, create the file .github/issues/<task-id>-name.md;"
+        echo "    3. If this is a general change without a task, use a reserved tag:"
+        echo "       [INFRA], [CHORE], [DOCS], [HOTFIX], [SECURITY], [GLOBAL], [RELEASE]"
+        echo "========================================================================"
+        exit 1
+    fi
+fi
+
+exit 0

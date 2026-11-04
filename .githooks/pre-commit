@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# ==============================================================================
+#            CLEAN CHASSIS — PRE-COMMIT QUALITY & LINTER AUDITOR
+# ==============================================================================
+
+set -e
+
+# ANSI Color Codes
+RESET="\033[0m"
+BOLD="\033[1m"
+GREEN="\033[32m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+echo -e "${BOLD}${BLUE}🔍 [HOOK] Running Clean Chassis pre-commit checks...${RESET}"
+
+# 1. Run Pre-Commit framework if installed and config present
+if command -v pre-commit &> /dev/null && [ -f ".pre-commit-config.yaml" ]; then
+    pre-commit run --all-files
+    exit 0
+fi
+
+# 2. Check staged python files
+STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+
+if [ -n "$STAGED_PY" ]; then
+    PYTHON="python3"
+    echo "  ⚡ Checking Python syntax compilation..."
+    $PYTHON -m py_compile $STAGED_PY
+
+    if command -v black &> /dev/null; then
+        echo "  ✔ Running black (formatting)..."
+        black --check $STAGED_PY --quiet
+    fi
+
+    if command -v isort &> /dev/null; then
+        echo "  ✔ Running isort (imports)..."
+        isort --check-only $STAGED_PY --quiet
+    fi
+
+    if command -v flake8 &> /dev/null; then
+        echo "  ✔ Running flake8 (100 columns)..."
+        flake8 $STAGED_PY --max-line-length=100
+    fi
+
+    if command -v ruff &> /dev/null; then
+        echo "  ✔ Running ruff..."
+        ruff check $STAGED_PY --quiet
+    fi
+fi
+
+echo -e "${GREEN}✅ Pre-commit hook passed successfully!${RESET}"
+exit 0
