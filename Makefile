@@ -18,7 +18,7 @@ MAGENTA := \033[35m
 BLUE    := \033[34m
 WHITE   := \033[97m
 
-.PHONY: help install status sync add summary check clean onboarding
+.PHONY: help install status sync add summary check clean onboarding pr test
 
 help:
 	@printf "$(CYAN)┌──────────────────────────────────────────────────────────────────────────────┐\n$(RESET)"
@@ -29,7 +29,9 @@ help:
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make sync$(RESET)       $(DIM)─$(RESET) Pull latest remote commits across all submodules         $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make add$(RESET)        $(DIM)─$(RESET) Register existing repo as next submodule (02_, 03_...)     $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make summary$(RESET)    $(DIM)─$(RESET) Generate visual portfolio audit report (summary.md)       $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make test$(RESET)       $(DIM)─$(RESET) Run automated integrity test suite via pytest             $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make check$(RESET)      $(DIM)─$(RESET) Run syntax validation across all automation scripts        $(CYAN)│\n$(RESET)"
+	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make pr$(RESET)         $(DIM)─$(RESET) Create or update Pull Request with quality checklist       $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make install$(RESET)    $(DIM)─$(RESET) Configure local git hooks & conventional commit policies $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)│$(RESET)  $(BOLD)$(GREEN)make clean$(RESET)      $(DIM)─$(RESET) Clean temporary files, caches, and report artifacts       $(CYAN)│\n$(RESET)"
 	@printf "$(CYAN)├──────────────────────────────────────────────────────────────────────────────┤\n$(RESET)"
@@ -58,6 +60,14 @@ check:
 	@printf "$(BOLD)$(BLUE)⚡ [SYNTAX] Compiling Python automation scripts...$(RESET)\n"
 	@$(PYTHON) -m py_compile scripts/*.py
 	@printf "$(GREEN)✔ All scripts compiled successfully!$(RESET)\n"
+
+test:
+	@printf "$(BOLD)$(BLUE)🧪 [TESTS] Running automated hub integrity test suite...$(RESET)\n"
+	@$(PYTEST) -v
+
+pr:
+	@printf "$(BOLD)$(BLUE)🚀 [PR] Creating or updating GitHub Pull Request...$(RESET)\n"
+	@$(PYTHON) scripts/create_pr.py
 
 clean:
 	@printf "$(YELLOW)🧹 [CLEAN] Cleaning temporary files...$(RESET)\n"

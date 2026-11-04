@@ -1,0 +1,52 @@
+name: 🔄 Submodules Upstream Sync Bot
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-submodules:
+    name: Sync Submodules Upstream
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Hub Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up SSH Agent (for private submodules if secret present)
+        uses: webfactory/ssh-agent@v0.9.0
+        continue-on-error: true
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+
+      - name: Update Submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --remote --recursive --merge || true
+
+      - name: Check for Submodule Changes
+        id: git-check
+        run: |
+          git status --porcelain
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit & Push Updates
+        if: steps.git-check.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore(submodules): [INFRA] automated upstream synchronization"
+          git push origin main

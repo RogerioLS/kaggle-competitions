@@ -52,3 +52,13 @@ def test_generate_summary_execution() -> None:
     assert summary_path.is_file()
     content = summary_path.read_text(encoding="utf-8")
     assert "foto_little.png" in content
+
+
+def test_github_workflows_and_templates_exist() -> None:
+    """Verifies required GitHub Actions workflows and templates exist."""
+    workflows_dir = HUB_ROOT / ".github" / "workflows"
+    assert (workflows_dir / "audit.yml").is_file()
+    assert (workflows_dir / "branch_lint.yml").is_file()
+    assert (workflows_dir / "submodule_sync.yml").is_file()
+    assert (HUB_ROOT / ".github" / "dependabot.yml").is_file()
+    assert (HUB_ROOT / ".github" / "pull_request_template.md").is_file()

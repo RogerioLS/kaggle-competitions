@@ -1,0 +1,62 @@
+name: ⚡ Audit & Quality Gate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  audit:
+    name: Hub Audit & Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Linting & Testing Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 ruff pytest
+
+      - name: Syntax & Linters Check
+        run: |
+          python3 -m py_compile scripts/*.py tests/*.py
+          flake8 scripts tests --max-line-length=100
+          ruff check scripts tests
+
+      - name: Run Test Suite
+        run: |
+          pytest -v
+
+      - name: Generate Visual Summary Report
+        run: |
+          python3 scripts/generate_summary.py
+          if [ -f summary.md ]; then
+            cat summary.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment Summary on Pull Request
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f summary.md ]; then
+            gh pr comment ${{ github.event.pull_request.number }} --body-file summary.md || true
+          fi
