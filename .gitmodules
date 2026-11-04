@@ -1,0 +1,3 @@
+[submodule "01_kaggle-gemma4-developer-agent"]
+	path = 01_kaggle-gemma4-developer-agent
+	url = git@github.com:RogerioLS/kaggle-gemma4-developer-agent.git
