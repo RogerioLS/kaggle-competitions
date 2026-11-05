@@ -230,6 +230,11 @@ def process_discovery_pipeline(
             dry_run=False,
         )
 
+        # Update visual summary report
+        summary_script = HUB_ROOT / "scripts" / "generate_summary.py"
+        if summary_script.is_file():
+            subprocess.run([sys.executable, str(summary_script)], cwd=str(HUB_ROOT), check=False)
+
         # 3. Commit with conventional format
         commit_msg = f"feat(hub): [INFRA] auto-register {next_idx:02d}_{name} submodule"
         subprocess.run(["git", "add", "."], cwd=str(HUB_ROOT), check=True)
