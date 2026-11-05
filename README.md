@@ -43,6 +43,7 @@ graph TD
 | # | Competition | Domain / Task | Core Stack | Status | Submodule Pointer |
 |---|---|---|---|---|---|
 | **01** | [Gemma 4 Developer Agent](https://www.kaggle.com/competitions/gemma-4-developer-agent) | Autonomous Software Agent (SWE-bench) | Gemma 4 31B, vLLM Quad-L4, LoRA W4A16, ReAct | 🚀 Active | [`01_kaggle-gemma4-developer-agent`](01_kaggle-gemma4-developer-agent) |
+| **02** | [Google — Name That LLM](https://www.kaggle.com/competitions/name-that-llm) | LLM Authorship Attribution / NLP | Python, PyTorch, Transformers, Clean Chassis | 🚀 Active | [`02_kaggle-name-that-llm`](02_kaggle-name-that-llm) |
 
 ---
 

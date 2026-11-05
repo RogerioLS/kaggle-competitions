@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 
 HUB_ROOT = Path(__file__).resolve().parent.parent
+if str(HUB_ROOT) not in sys.path:
+    sys.path.insert(0, str(HUB_ROOT))
 
 
 def test_sync_submodules_status() -> None:
@@ -22,6 +24,9 @@ def test_sync_submodules_status() -> None:
 
 def test_add_competition_dry_run() -> None:
     """Verifies add_competition.py calculates next index and dry-runs successfully."""
+    from scripts.add_competition import discover_next_index
+
+    next_idx = discover_next_index()
     res = subprocess.run(
         [
             sys.executable,
@@ -35,8 +40,8 @@ def test_add_competition_dry_run() -> None:
         check=False,
     )
     assert res.returncode == 0
-    assert "REGISTERING COMPETITION SUBMODULE #02" in res.stdout
-    assert "02_kaggle-arc-prize-2024" in res.stdout
+    assert f"REGISTERING COMPETITION SUBMODULE #{next_idx:02d}" in res.stdout
+    assert f"{next_idx:02d}_kaggle-arc-prize-2024" in res.stdout
 
 
 def test_generate_summary_execution() -> None:
