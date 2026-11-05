@@ -49,7 +49,9 @@ jobs:
       - name: Update Submodules
         run: |
           git submodule sync --recursive
-          git submodule update --init --remote --recursive --merge || true
+          if ! git submodule update --init --remote --recursive --merge; then
+            echo "::warning title=Submodule Sync Authentication::Could not update private submodules. Ensure REPO_DISCOVERY_PAT or DEPLOY_SSH_KEY is configured in repository secrets."
+          fi
 
       - name: Check for Submodule Changes
         id: git-check

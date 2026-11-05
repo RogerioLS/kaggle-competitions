@@ -9,7 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
 ### Added
+- **01_kaggle-gemma4-developer-agent**: ✨ feat(notebook): [TASK-17] integrate 10-task stratified benchmark into cell 6 of evaluation notebook
+- **01_kaggle-gemma4-developer-agent**: Merge branch 'main' into feat/task-17-test-driven-reproduction
+- **01_kaggle-gemma4-developer-agent**: ✨ feat(prompt): [TASK-17] enrich validator with framework-specific verification recipes and /tmp safety
+- **01_kaggle-gemma4-developer-agent**: ✨ feat(benchmark): [TASK-17] implement stratified 10-task benchmark sampler and unit tests
+- **01_kaggle-gemma4-developer-agent**: 📝 docs(task-17): [TASK-17] eliminate django/sympy hallucinations and align with competition dataset (fastapi, rich, requests)
 - Autonomous AI competition discovery and registration bot (`scripts/auto_discover_competitions.py`).
 - Automatic upstream submodule synchronization bot with GitHub Actions (`submodule_sync.yml`).
 - Portfolio health audit suite with cyberpunk badge generator (`scripts/generate_summary.py`).
