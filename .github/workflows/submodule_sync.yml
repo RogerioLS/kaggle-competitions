@@ -16,14 +16,33 @@ jobs:
 
     steps:
       - name: Checkout Hub Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.REPO_DISCOVERY_PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Set up SSH Agent (for private submodules if secret present)
-        uses: webfactory/ssh-agent@v0.10.0
-        continue-on-error: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Configure Submodule Authentication
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+          AUTH_TOKEN: ${{ secrets.REPO_DISCOVERY_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$SSH_KEY" ]; then
+            echo "has_ssh=true" >> $GITHUB_ENV
+          else
+            echo "has_ssh=false" >> $GITHUB_ENV
+            echo "Configuring URL rewrite for authenticated HTTPS access..."
+            git config --global url."https://x-access-token:${AUTH_TOKEN}@github.com/".insteadOf "git@github.com:"
+            git config --global url."https://x-access-token:${AUTH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          fi
+
+      - name: Set up SSH Agent (if SSH key provided)
+        if: env.has_ssh == 'true'
+        uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
 
@@ -49,9 +68,27 @@ jobs:
 
       - name: Commit & Push Updates
         if: steps.git-check.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.REPO_DISCOVERY_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REPO_DISCOVERY_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "chore(submodules): [INFRA] automated upstream synchronization"
-          git push origin main
+          
+          # Attempt direct push to main; if branch protection blocks it, fallback to opening a PR
+          if ! git push origin main; then
+            echo "Notice: Direct push to 'main' rejected (branch protection). Falling back to PR..."
+            SYNC_BRANCH="chore/submodules-sync-$(date +%Y%m%d%H%M%S)"
+            git checkout -b "$SYNC_BRANCH"
+            git push origin "$SYNC_BRANCH"
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "chore(submodules): [INFRA] automated upstream synchronization" \
+              --body "Automated upstream synchronization of submodules and milestone changelog." \
+              --base main \
+              --head "$SYNC_BRANCH" || true
+          fi
+

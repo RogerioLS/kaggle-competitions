@@ -15,21 +15,24 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
       - name: Validate Branch Name and Commits (Auto-Close on Failure)
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
         run: |
           python3 scripts/lint_branch_and_commits.py \
             --branch "${{ github.head_ref }}" \
             --base "${{ github.base_ref }}" \
             --pr-number "${{ github.event.pull_request.number }}"
+

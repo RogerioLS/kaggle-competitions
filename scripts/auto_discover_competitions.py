@@ -245,10 +245,57 @@ def process_discovery_pipeline(
             )
             subprocess.run(["git", "branch", "-d", branch_name], cwd=str(HUB_ROOT), check=True)
             print(f"{Colors.GREEN}✔ Successfully merged '{branch_name}' into main!{Colors.RESET}")
+        else:
+            msg = f"📡 Pushing feature branch '{branch_name}' to origin..."
+            print(f"{Colors.CYAN}{msg}{Colors.RESET}")
+            subprocess.run(["git", "push", "origin", branch_name], cwd=str(HUB_ROOT), check=False)
+            repo = os.environ.get("GITHUB_REPOSITORY")
+            repo_arg = ["--repo", repo] if repo else []
+            pr_cmd = [
+                "gh",
+                "pr",
+                "create",
+                *repo_arg,
+                "--title",
+                commit_msg,
+                "--body",
+                f"Auto-discovery registered competition submodule: `{name}`.",
+                "--base",
+                "main",
+                "--head",
+                branch_name,
+            ]
+            subprocess.run(pr_cmd, check=False)
 
     if auto_merge:
         print(f"{Colors.CYAN}📡 Pushing updated main branch to origin...{Colors.RESET}")
-        subprocess.run(["git", "push", "origin", "main"], cwd=str(HUB_ROOT), check=True)
+        try:
+            subprocess.run(["git", "push", "origin", "main"], cwd=str(HUB_ROOT), check=True)
+        except subprocess.CalledProcessError:
+            warn_msg = (
+                f"Notice: Direct push to 'main' rejected (branch protection enabled). "
+                f"Opening Pull Request for '{branch_name}' instead..."
+            )
+            print(f"{Colors.YELLOW}{warn_msg}{Colors.RESET}")
+            subprocess.run(["git", "checkout", "-b", branch_name], cwd=str(HUB_ROOT), check=False)
+            subprocess.run(["git", "push", "origin", branch_name], cwd=str(HUB_ROOT), check=False)
+            repo = os.environ.get("GITHUB_REPOSITORY")
+            repo_arg = ["--repo", repo] if repo else []
+            pr_cmd = [
+                "gh",
+                "pr",
+                "create",
+                *repo_arg,
+                "--title",
+                "feat(hub): [INFRA] auto-register uncataloged competition",
+                "--body",
+                "Auto-discovery registered uncataloged competition repository into the hub.",
+                "--base",
+                "main",
+                "--head",
+                branch_name,
+            ]
+            subprocess.run(pr_cmd, check=False)
 
     print(f"\n{Colors.GREEN}✅ Auto-discovery pipeline completed successfully!{Colors.RESET}\n")
     return 0
