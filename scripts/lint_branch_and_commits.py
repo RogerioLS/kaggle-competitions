@@ -139,13 +139,34 @@ def close_pull_request(pr_number: str, comment_body: str) -> None:
         print("Notice: GITHUB_TOKEN or PR number missing. Skipping auto-close.")
         return
 
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    repo_arg = ["--repo", repo] if repo else []
+
     try:
+        print(f"Posting governance feedback to PR #{pr_number}...")
+        comment_cmd = ["gh", "pr", "comment", str(pr_number), *repo_arg, "--body", comment_body]
+        res_comment = subprocess.run(comment_cmd, capture_output=True, text=True, check=False)
+        if res_comment.returncode != 0:
+            err_details = res_comment.stderr.strip()
+            print(
+                f"Notice: Could not post comment to PR #{pr_number}: {err_details}.\n"
+                "Ensure Workflow permissions are set to 'Read and write permissions' in "
+                "GitHub repository Settings > Actions > General.",
+                file=sys.stderr,
+            )
+
         print(f"Closing PR #{pr_number} due to governance policy violation...")
-        comment_cmd = ["gh", "pr", "comment", str(pr_number), "--body", comment_body]
-        subprocess.run(comment_cmd, check=False)
-        close_cmd = ["gh", "pr", "close", str(pr_number)]
-        subprocess.run(close_cmd, check=False)
-        print(f"✔ PR #{pr_number} successfully closed.")
+        close_cmd = ["gh", "pr", "close", str(pr_number), *repo_arg]
+        res_close = subprocess.run(close_cmd, capture_output=True, text=True, check=False)
+        if res_close.returncode == 0:
+            print(f"✔ PR #{pr_number} successfully closed.")
+        else:
+            print(
+                f"Notice: Could not close PR #{pr_number}: {res_close.stderr.strip()}.\n"
+                "Ensure Workflow permissions are set to 'Read and write permissions' in "
+                "GitHub repository Settings > Actions > General.",
+                file=sys.stderr,
+            )
     except Exception as exc:
         print(f"Failed to auto-close PR #{pr_number}: {exc}", file=sys.stderr)
 
