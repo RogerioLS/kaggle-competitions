@@ -71,7 +71,7 @@ def format_repo_url(repo: str) -> Tuple[str, str]:
     if clean.startswith("git@") or clean.startswith("https://"):
         url = f"{clean}.git" if not clean.endswith(".git") else clean
     else:
-        url = f"git@github.com:RogerioLS/{name}.git"
+        url = f"https://github.com/RogerioLS/{name}.git"
 
     return url, name
 

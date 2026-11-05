@@ -109,7 +109,7 @@ def discover_remote_github_repos(token: Optional[str]) -> List[Dict[str, str]]:
                     repos.append(
                         {
                             "name": name,
-                            "url": item.get("ssh_url") or item.get("clone_url"),
+                            "url": item.get("clone_url") or item.get("ssh_url"),
                             "description": item.get("description") or "",
                         }
                     )
@@ -224,11 +224,19 @@ def process_discovery_pipeline(
         subprocess.run(["git", "checkout", "-b", branch_name], cwd=str(HUB_ROOT), check=True)
 
         # 2. Register Submodule and update README
-        register_submodule(
+        reg_code = register_submodule(
             repo_input=url,
             title=name.replace("kaggle-", "").replace("-", " ").title(),
             dry_run=False,
         )
+        if reg_code != 0:
+            print(
+                f"{Colors.RED}❌ Skipping registration of {name} "
+                f"due to submodule add failure.{Colors.RESET}"
+            )
+            subprocess.run(["git", "checkout", "main"], cwd=str(HUB_ROOT), check=False)
+            subprocess.run(["git", "branch", "-D", branch_name], cwd=str(HUB_ROOT), check=False)
+            continue
 
         # Update visual summary report
         summary_script = HUB_ROOT / "scripts" / "generate_summary.py"
