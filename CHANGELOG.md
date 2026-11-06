@@ -11,7 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: ✨ feat(transformers): [TASK-04:#10] implement dense transformer embeddings and neural sequence classifier
+- **02_kaggle-name-that-llm**: ✨ feat(features): [TASK-03:#9] implement stylometric and tfidf feature pipeline with baseline models
+- **02_kaggle-name-that-llm**: ✨ feat(evaluation): [TASK-02] implement domain entities, stratified group cv splitter, and balanced accuracy metrics
+- **02_kaggle-name-that-llm**: ✨ feat(governance): [TASK-01] establish institutional operating system, rules, and documentation
 - **01_kaggle-gemma4-developer-agent**: Merge feat/register-02-kaggle-name-that-llm
 - **01_kaggle-gemma4-developer-agent**: ✨ feat(hub): [INFRA] auto-register 02_kaggle-name-that-llm submodule
 - **01_kaggle-gemma4-developer-agent**: ✨ feat(hub): [INFRA] register 02_kaggle-name-that-llm submodule and update portfolio index
