@@ -12,7 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 📝 docs: [TASK-07:#21] update master memory compilation and system design ADRs for v3.0 architecture
+- **02_kaggle-name-that-llm**: Merge remote-tracking branch 'origin/main' into feat/task-06-hierarchical-deberta-and-deep-stylometry
+- **02_kaggle-name-that-llm**: ✨ feat(modeling): [TASK-07:#21] implement boosted decision trees, SVD latent semantics and calibrated stacking
+- **02_kaggle-name-that-llm**: ✨ feat(notebook): [TASK-06:#18] build v2.0 offline notebook with hierarchical deep stylometry engine
+- **02_kaggle-name-that-llm**: 📝 docs(audit): [TASK-06:#18] record architecture ADRs, 83 passing tests and task 07 roadmap
 - **02_kaggle-name-that-llm**: ✨ feat(transformers): [TASK-04:#10] implement dense transformer embeddings and neural sequence classifier
 - **02_kaggle-name-that-llm**: ✨ feat(features): [TASK-03:#9] implement stylometric and tfidf feature pipeline with baseline models
 - **02_kaggle-name-that-llm**: ✨ feat(evaluation): [TASK-02] implement domain entities, stratified group cv splitter, and balanced accuracy metrics
