@@ -13,7 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: ✨ feat(notebooks): [TASK-08:#26] implement v5.0 offline notebook with open pool dual-svc and sibling refinement
+- **02_kaggle-name-that-llm**: 📝 docs: [TASK-08:#26] document v4.0 post-mortem and v5.0 open pool dual-svc architecture
+- **02_kaggle-name-that-llm**: ✨ feat(notebooks): [TASK-08:#26] integrate sinkhorn test balancing into offline notebook generator
+- **02_kaggle-name-that-llm**: ✨ feat(models): [TASK-08:#26] implement damped sinkhorn-knopp marginal distribution balancer
+- **02_kaggle-name-that-llm**: ✨ feat(models): [TASK-08:#26] implement conditional family gating and sibling refiner
 - **02_kaggle-name-that-llm**: 📝 docs: [TASK-07:#21] update master memory compilation and system design ADRs for v3.0 architecture
 - **02_kaggle-name-that-llm**: Merge remote-tracking branch 'origin/main' into feat/task-06-hierarchical-deberta-and-deep-stylometry
 - **02_kaggle-name-that-llm**: ✨ feat(modeling): [TASK-07:#21] implement boosted decision trees, SVD latent semantics and calibrated stacking
