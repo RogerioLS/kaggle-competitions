@@ -14,7 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 📝 docs(status): [DOCS] record official lb score 0.669 for v6.0 multi-lora apex
+- **02_kaggle-name-that-llm**: 📝 docs(memory): [TASK-08:#26] document v5.0 empirical ceiling, v6.0 multi-lora architecture and evolution strategy
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-08:#26] activate v6.0 multi-lora apex roadmap
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-08:#26] record v5.0 official score 0.364 and update roadmap toward neural multi-lora
 - **02_kaggle-name-that-llm**: ✨ feat(notebooks): [TASK-08:#26] implement v5.0 offline notebook with open pool dual-svc and sibling refinement
 - **02_kaggle-name-that-llm**: 📝 docs: [TASK-08:#26] document v4.0 post-mortem and v5.0 open pool dual-svc architecture
 - **02_kaggle-name-that-llm**: ✨ feat(notebooks): [TASK-08:#26] integrate sinkhorn test balancing into offline notebook generator
