@@ -15,7 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: ✨ feat(v7-gold): [TASK-10] implement transductive prompt centering, hungarian matching and compiler
+- **02_kaggle-name-that-llm**: 📝 docs(architecture): [DOCS] document competitive journey and v7.0 gold medal architecture
+- **02_kaggle-name-that-llm**: ✨ feat(stylometry): [TASK-09:#30] integrate 100+ deep stylometric features and tune sibling re-ranking
+- **02_kaggle-name-that-llm**: ✨ feat(v6): [TASK-09:#30] extract modular apex architecture and add deterministic compiler
 - **02_kaggle-name-that-llm**: 📝 docs(status): [DOCS] record official lb score 0.669 for v6.0 multi-lora apex
 - **02_kaggle-name-that-llm**: 📝 docs(memory): [TASK-08:#26] document v5.0 empirical ceiling, v6.0 multi-lora architecture and evolution strategy
 - **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-08:#26] activate v6.0 multi-lora apex roadmap
