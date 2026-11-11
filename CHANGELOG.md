@@ -16,7 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-10:#34] record official kaggle submission #58206714 for v7.0 gold apex
+- **02_kaggle-name-that-llm**: ✨ feat(v7-gold): [TASK-10:#34] implement transductive prompt centering, hungarian matching and compiler
 - **02_kaggle-name-that-llm**: ✨ feat(v7-gold): [TASK-10] implement transductive prompt centering, hungarian matching and compiler
 - **02_kaggle-name-that-llm**: 📝 docs(architecture): [DOCS] document competitive journey and v7.0 gold medal architecture
 - **02_kaggle-name-that-llm**: ✨ feat(stylometry): [TASK-09:#30] integrate 100+ deep stylometric features and tune sibling re-ranking
