@@ -17,7 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: ✨ feat(v8-pool): [TASK-11:#37] register official v8 submission 58238973
+- **02_kaggle-name-that-llm**: ✨ feat(v8-pool): [TASK-11:#37] implement open pool backbones layer stylometry and adaptive gating (closes #37)
 - **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-10:#34] record official kaggle submission #58206714 for v7.0 gold apex
 - **02_kaggle-name-that-llm**: ✨ feat(v7-gold): [TASK-10:#34] implement transductive prompt centering, hungarian matching and compiler
 - **02_kaggle-name-that-llm**: ✨ feat(v7-gold): [TASK-10] implement transductive prompt centering, hungarian matching and compiler
