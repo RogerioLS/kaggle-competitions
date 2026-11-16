@@ -18,7 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: ✨ feat(v10-compiler): [TASK-13:#44] implement deterministic v10 hybrid compiler and notebook scaffold
+- **02_kaggle-name-that-llm**: ✨ feat(v10-hybrid): [TASK-13:#44] implement native linear head fitter, encoder packager and hybrid manifest
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-12:#40] synchronize canonical docs with v9.0 submission and issue checklist
+- **02_kaggle-name-that-llm**: ✨ feat(v9-rebalance): [TASK-12:#40] implement multi-backbone ensemble rebalancing and dual-encoder fusion
 - **02_kaggle-name-that-llm**: ✨ feat(v8-pool): [TASK-11:#37] register official v8 submission 58238973
 - **02_kaggle-name-that-llm**: ✨ feat(v8-pool): [TASK-11:#37] implement open pool backbones layer stylometry and adaptive gating (closes #37)
 - **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-10:#34] record official kaggle submission #58206714 for v7.0 gold apex
