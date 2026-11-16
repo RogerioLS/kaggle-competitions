@@ -44,6 +44,7 @@ graph TD
 |---|---|---|---|---|---|
 | **01** | [Gemma 4 Developer Agent](https://www.kaggle.com/competitions/gemma-4-developer-agent) | Autonomous Software Agent (SWE-bench) | Gemma 4 31B, vLLM Quad-L4, LoRA W4A16, ReAct | 🚀 Active | [`01_kaggle-gemma4-developer-agent`](01_kaggle-gemma4-developer-agent) |
 | **02** | Name That Llm | Machine Learning / Competitive AI | Python, PyTorch, Clean Chassis | 🚀 Active | [`02_kaggle-name-that-llm`](02_kaggle-name-that-llm) |
+| **03** | Quantum Circuit Compilation | Machine Learning / Competitive AI | Python, PyTorch, Clean Chassis | 🚀 Active | [`03_kaggle-quantum-circuit-compilation`](03_kaggle-quantum-circuit-compilation) |
 
 ---
 
