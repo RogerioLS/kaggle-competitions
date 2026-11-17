@@ -19,7 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **01_kaggle-gemma4-developer-agent**: Merge feat/register-03-kaggle-quantum-circuit-compilation
+- **01_kaggle-gemma4-developer-agent**: ✨ feat(hub): [INFRA] auto-register 03_kaggle-quantum-circuit-compilation submodule
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-13:#44] record official v10.0 submission #58440351
 - **02_kaggle-name-that-llm**: ✨ feat(v10-compiler): [TASK-13:#44] implement deterministic v10 hybrid compiler and notebook scaffold
 - **02_kaggle-name-that-llm**: ✨ feat(v10-hybrid): [TASK-13:#44] implement native linear head fitter, encoder packager and hybrid manifest
 - **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-12:#40] synchronize canonical docs with v9.0 submission and issue checklist
