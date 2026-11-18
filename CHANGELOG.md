@@ -20,7 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-14:#48] record official v11.0 Kaggle submission #58482323
+- **02_kaggle-name-that-llm**: 🔧 fix(v11-stage2): [TASK-14:#48] align kernel slug without dot in title
+- **02_kaggle-name-that-llm**: ✨ feat(v11-stage2): [TASK-14:#48] add Stage-2 5-fold CV fine-tuning from Open-Pool checkpoint
+- **02_kaggle-name-that-llm**: ✨ feat(v11-validation): [TASK-14:#48] add pipeline auditor, postproc ablation & openpool FT
 - **01_kaggle-gemma4-developer-agent**: Merge feat/register-03-kaggle-quantum-circuit-compilation
 - **01_kaggle-gemma4-developer-agent**: ✨ feat(hub): [INFRA] auto-register 03_kaggle-quantum-circuit-compilation submodule
 - **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-13:#44] record official v10.0 submission #58440351
