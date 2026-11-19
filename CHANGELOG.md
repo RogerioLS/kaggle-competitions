@@ -21,7 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-15:#51] record official v12.0 Kaggle submission #58518266
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(invsqrt): [TASK-04:#9] compress invsqrt circuit 5.51x via qrom quadratic interpolation
+- **03_kaggle-quantum-circuit-compilation**: 📝 docs(readme): [TASK-03:#8] enrich readme with verified vqcc metrics, submission spec, and verifier cli
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(vqcc): [TASK-03:#8] ingest competition verifiers, verify baselines, and add submission validator
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(competition): [TASK-02:#7] configure quantum circuit compilation identity, docs, and benchmark scaffold
 - **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-14:#48] record official v11.0 Kaggle submission #58482323
 - **02_kaggle-name-that-llm**: 🔧 fix(v11-stage2): [TASK-14:#48] align kernel slug without dot in title
 - **02_kaggle-name-that-llm**: ✨ feat(v11-stage2): [TASK-14:#48] add Stage-2 5-fold CV fine-tuning from Open-Pool checkpoint
