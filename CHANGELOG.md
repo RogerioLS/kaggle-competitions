@@ -22,7 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 📝 docs(handoff): [TASK-16:#54] record v13.0 submission #58570186 & full Phase-2 Top-10 continuity memory for next session
+- **02_kaggle-name-that-llm**: ✨ feat(v13-challenger): [TASK-16:#54] implement Fable GLM routing, 4 vendor tokenizer fingerprints, Exact/Tells v3/v4 & clean post-GLM router
+- **02_kaggle-name-that-llm**: 📝 docs(task-16): [TASK-16:#54] register Top-10 Challenger architecture, Wave7/VendorTok neural CV evidence & journey log
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(submission): [TASK-07:#18] package verified submission.zip and dispatch kaggle submission
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dqi): [TASK-06:#16] compress syndrome decoder via TowerField12 and 2-phase EEA
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dfthcsos): [TASK-05:#14] compress ANGLE_k via 10-bit Givens polish and J=10 QROM batching
 - **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-15:#51] record official v12.0 Kaggle submission #58518266
 - **03_kaggle-quantum-circuit-compilation**: ✨ feat(invsqrt): [TASK-04:#9] compress invsqrt circuit 5.51x via qrom quadratic interpolation
 - **03_kaggle-quantum-circuit-compilation**: 📝 docs(readme): [TASK-03:#8] enrich readme with verified vqcc metrics, submission spec, and verifier cli
