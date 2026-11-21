@@ -23,7 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: ✨ feat(v14-wave7): [TASK-17] integrate Wave7 A100 canary-gated champions, 5-fold nlm-q25-v5 & preset TASK-18 Phase 2
+- **02_kaggle-name-that-llm**: ✨ feat(v14-wave7): [TASK-17] implement 320-token deep-read glm likelihood, fable routing & calibrated 84-feat vendor bpe compiler
+- **02_kaggle-name-that-llm**: 📝 docs(issues): [TASK-17] add specification and architecture plan for v14.0 wave7 multidepth and kimi-k3 segrun
 - **02_kaggle-name-that-llm**: 📝 docs(handoff): [TASK-16:#54] record v13.0 submission #58570186 & full Phase-2 Top-10 continuity memory for next session
 - **02_kaggle-name-that-llm**: ✨ feat(v13-challenger): [TASK-16:#54] implement Fable GLM routing, 4 vendor tokenizer fingerprints, Exact/Tells v3/v4 & clean post-GLM router
 - **02_kaggle-name-that-llm**: 📝 docs(task-16): [TASK-16:#54] register Top-10 Challenger architecture, Wave7/VendorTok neural CV evidence & journey log
