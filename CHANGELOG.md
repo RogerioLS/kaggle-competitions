@@ -24,7 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(invsqrt): [TASK-11:#26] compress workspace to 123Q and 2,219 Toffolis (304,514 score)
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dfthcsos): [TASK-10:#25] prune copies C=44 with L1/BLAS polish and document LB 2.44620
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dqi): [TASK-09:#24] Toom-3 GF((2^4)^3) 45-Toff mul, 75-Toff TowerField12, in-place Chien-Forney
 - **02_kaggle-name-that-llm**: ✨ feat(v14-wave7): [TASK-17] integrate Wave7 A100 canary-gated champions, 5-fold nlm-q25-v5 & preset TASK-18 Phase 2
 - **02_kaggle-name-that-llm**: ✨ feat(v14-wave7): [TASK-17] implement 320-token deep-read glm likelihood, fable routing & calibrated 84-feat vendor bpe compiler
 - **02_kaggle-name-that-llm**: 📝 docs(issues): [TASK-17] add specification and architecture plan for v14.0 wave7 multidepth and kimi-k3 segrun
