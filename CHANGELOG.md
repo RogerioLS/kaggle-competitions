@@ -25,7 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 🐛 fix(v14-wave7): [TASK-17] guard LoRA merge for layers >= keep (32-layer q25_14v5) & document #58887021 post-mortem
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-17] record official v14.0 Kaggle submission #58887021
+- **02_kaggle-name-that-llm**: 🐛 fix(v14-wave7): [TASK-17] fix load_exact_tells_pool import, keep deb & gate unverified Wave7 stage
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dfthcsos): [TASK-13:#34] qubit liveness audit and SQP lambda_eff polisher (v0.9)
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dfthcsos): [TASK-12:#32] multi-salt SOTA portfolio audit and GF(2) loader engine
 - **03_kaggle-quantum-circuit-compilation**: ✨ feat(invsqrt): [TASK-11:#26] compress workspace to 123Q and 2,219 Toffolis (304,514 score)
 - **03_kaggle-quantum-circuit-compilation**: ✨ feat(dfthcsos): [TASK-10:#25] prune copies C=44 with L1/BLAS polish and document LB 2.44620
 - **03_kaggle-quantum-circuit-compilation**: ✨ feat(dqi): [TASK-09:#24] Toom-3 GF((2^4)^3) 45-Toff mul, 75-Toff TowerField12, in-place Chien-Forney
