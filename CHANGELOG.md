@@ -26,7 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 🐛 fix(v15-gold): [TASK-18:#62] enforce 50-source mount ceiling and link verified kimi dataset
+- **02_kaggle-name-that-llm**: ✨ feat(v15-gold): [TASK-18] implement kimi-k3 segrun calibrator, proprietary sibling expert, and v15.0 compiler
+- **02_kaggle-name-that-llm**: ✨ feat(governance): [INFRA] add quota routing rule 09 and document v14.1 score
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-17] record official v14.1 Kaggle submission #58902470 (Version 4)
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dqi): [TASK-17:#42] prune 4 zero-error CCZ gates via remote 32k scan and dispatch v1.2
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(governance): [TASK-15:#38] integrate quota harness and document brot=6 gpu homotopy findings
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dfthcsos): [TASK-14:#36] Kaggle GPU R9 B105 study and SQP-polished SOTA v1.0
 - **02_kaggle-name-that-llm**: 🐛 fix(v14-wave7): [TASK-17] guard LoRA merge for layers >= keep (32-layer q25_14v5) & document #58887021 post-mortem
 - **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-17] record official v14.0 Kaggle submission #58887021
 - **02_kaggle-name-that-llm**: 🐛 fix(v14-wave7): [TASK-17] fix load_exact_tells_pool import, keep deb & gate unverified Wave7 stage
