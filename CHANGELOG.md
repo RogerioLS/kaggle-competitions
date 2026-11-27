@@ -27,7 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
 ### Added
+- **02_kaggle-name-that-llm**: 📝 docs(status): [TASK-19:#64] record official submission #59005432 and v16 lineup status
+- **02_kaggle-name-that-llm**: ✨ feat(v16-lineup): [TASK-19:#64] implement the model lineup architecture with guarded fable return, sibling odds and pb115
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dfthcsos): [TASK-21] scaffold 82-ancilla combinatorial synthesis for legacy batches
+- **03_kaggle-quantum-circuit-compilation**: ✅ 🧪 test(dqi): [TASK-20] benchmark 32k DEL scan and 102.4k verify on Kaggle GPU
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dfthcsos): [TASK-19:#44] run Tesla T4 Tensor-Core GF(2) OMP benchmark and update Atlas of Dead Ends
+- **03_kaggle-quantum-circuit-compilation**: 📝 docs(governance): [TASK-19:#44] scaffold 82-ancilla GPU synthesis for legacy dfthcsos batches
+- **03_kaggle-quantum-circuit-compilation**: ✨ feat(dqi): [TASK-18:#43] scaffold qubit liveness audit and remote Kaggle C scanner
 - **02_kaggle-name-that-llm**: 🐛 fix(v15-gold): [TASK-18:#62] enforce 50-source mount ceiling and link verified kimi dataset
 - **02_kaggle-name-that-llm**: ✨ feat(v15-gold): [TASK-18] implement kimi-k3 segrun calibrator, proprietary sibling expert, and v15.0 compiler
 - **02_kaggle-name-that-llm**: ✨ feat(governance): [INFRA] add quota routing rule 09 and document v14.1 score
